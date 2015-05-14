@@ -1,0 +1,28 @@
+{
+    "name": "grammar-workbench",
+    "description": "",
+    "version": "0.0.1",
+    "main": "./grammar-workbench.js",
+    "author": {
+        "name": "Hugo ter Doest",
+        "email": "hwl.ter.doest@gmail.com"
+    },
+    "keywords": [],
+    "licenses": {
+        "type": "gpl30"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/Hugo-ter-Doest/grammar-workbench.git"
+    },
+    "bugs": {
+        "url": "http://github.com/Hugo-ter-Doest/grammar-workbench/issues"
+    },
+    "dependencies": {
+    "log4js": "*",
+    "natural": "*",
+    "chart-parsers": "*",
+    "express": "*",
+    "formidable": "*"
+  }
+}
