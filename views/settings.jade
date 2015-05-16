@@ -1,0 +1,72 @@
+extends layout
+
+block content
+    div.form-style-1
+      form(method="post", action="/submitParserSettings", enctype="multipart/form-data")
+        h2 Tokenizer settings
+        fieldset
+          ul
+            li
+              label Tokenizer algorithm
+            li
+              select.formstyle-1(id="tokenizerAlgorithm", name="tokenizerAlgorithm")
+                option(value="noChoise") Choose an algorithm
+                option(value="wordTokenizer") Word tokenizer
+                option(value="treebankWordTokenizer") Treebank word tokenizer
+                option(value="regexpTokenizer") Regular expression tokenizer
+                option(value="wordPunctTokenizer") Word punctuation tokenizer
+            li
+              label Regular expression:
+            li
+              input(type="text", name="regularExpression")
+        br
+        h2 Type lattice settings
+        fieldset
+          ul
+            li
+              label Type lattice file
+            li
+              input(type="file", name="typeLatticeFile")
+              input(type='submit', name='editTypeLattice', value='Edit')
+            li
+              label
+                input(type="checkbox", name="applyAppropriateFunction", value="Apply appropriate function")
+                = " Apply appropriate function"
+        br
+        h2 Tagger settings
+        fieldset
+          ul
+            li
+              label Lexicon file
+            li
+              input(type="file", name="grammarFile")
+              input(type='submit', name='editGrammar', value='Edit')
+            li
+              label
+                input(type="checkbox", name="applyUnification", value="Apply unification")
+                = " Strip words that could not be tagged"
+        br
+        h2 Parser settings
+        fieldset
+          ul
+            li
+              label Grammar file
+            li
+              input(type="file", name="grammarFile")
+              input(type='submit', name='editGrammar', value='Edit')
+            li
+              label Parsing algorithm
+            li
+              select(id="parsingAlgorithm", name="parsingAlgorithm")
+                option(value="noChoise") Choose an algorithm
+                option(value="CYK") Cocke Younger Kasami
+                option(value="Earley") Earley
+                option(value="LeftCorner") Left-Corner
+                option(value="HeadCorner") Head-Corner
+            li
+              label
+                input(type="checkbox", name="applyUnification", value="Apply unification")
+                = " Apply unification"
+        br
+        input(type='submit', name='submitParserSettings', value='Save')
+        input(type='submit', name='cancelParserSettings', value='Cancel')

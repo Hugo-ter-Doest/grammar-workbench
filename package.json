@@ -23,6 +23,7 @@
     "natural": "*",
     "chart-parsers": "*",
     "express": "*",
-    "formidable": "*"
+    "formidable": "*",
+    "body-parser": "*"
   }
 }
