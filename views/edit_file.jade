@@ -1,0 +1,12 @@
+extends layout
+
+block content
+    div.form-style-1
+        div#editor
+        script(type='text/javascript' src='/javascript/ACE/src-noconflict/ace.js')
+        script.
+          var editor = ace.edit("editor");
+          editor.setTheme("ace/theme/monokai");
+          editor.getSession().setMode("ace/mode/text");
+          var text = 'S -> NP VP';
+          editor.setValue(text, 0);

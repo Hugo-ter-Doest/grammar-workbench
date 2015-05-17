@@ -12,7 +12,7 @@ block content
                 input(type="text", value="filename")
               li
                 label
-                  input(type="checkbox", name="hasAppropriateFunction", value="hasAppropriateFunction")
+                  input(type="checkbox", name="hasAppropriateFunction", value="hasAppropriateFunction", onclick="return false")
                   = " Type lattice has appropriate function"
               li
                 label Lexicon
@@ -20,7 +20,7 @@ block content
                 input(type="text", value="filename")
               li
                 label
-                  input(type="checkbox", name="hasFeatureStructures", value="hasFeatureStructures")
+                  input(type="checkbox", name="hasFeatureStructures", value="hasFeatureStructures", onclick="return false")
                   = " Lexicon assigns feature structures"
               li
                 label Grammar
@@ -28,11 +28,11 @@ block content
                 input(type="text", value="filename")
               li
                 label
-                  input(type="checkbox", name="isCNF", value="isCNF")
+                  input(type="checkbox", name="isCNF", value="isCNF", onclick="return false")
                   = " Grammar is in Chomsky Normal Form"
               li
                 label
-                  input(type="checkbox", name="hasConstraints", value="hasConstraints")
+                  input(type="checkbox", name="hasConstraints", value="hasConstraints", onclick="return false")
                   = " Grammar has unification constraints"
           h2 Parse sentence
           fieldset
