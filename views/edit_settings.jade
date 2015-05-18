@@ -37,7 +37,7 @@ block content
               input(type='submit', name='submit_settings', value='Edit type lattice')
             li
               label
-                input(type="checkbox", name="applyAppropriateFunction", value="Apply appropriate function", checked)
+                input(type="checkbox", name="applyAppropriateFunction", checked=settings.applyAppropriateFunction)
                 = " Apply appropriate function"
         br
         h2 Tagger settings
@@ -51,7 +51,7 @@ block content
               else
                 input(type="text", id="currentLexiconFile", value="no file selected", readonly)
             li
-              label(for="lexiconFile") Select file
+              label(for="lexiconFile") Select file:
             li
               input(type="file", id="lexiconFile", name="lexiconFile")
               input(type='submit', name='submit_settings', value='Edit lexicon')
@@ -71,7 +71,7 @@ block content
               else
                 input(type="text", id="currentGrammarFile", value="no file selected", readonly)
             li
-              label(for="grammarFile") Select file
+              label(for="grammarFile") Select file:
             li
               input(type="file", id="grammarFile", name="grammarFile")
               input(type='submit', name='submit_settings', value='Edit grammar')

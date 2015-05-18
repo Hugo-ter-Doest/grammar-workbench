@@ -16,6 +16,12 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+var server_settings = require('./config/Settings');
+
+var log4js = require('log4js');
+log4js.configure(server_settings.log4js_config);
+var logger = log4js.getLogger('grammar-workbench');
+
 var fs = require('fs');
 var path = require('path');
 
@@ -27,13 +33,28 @@ var bodyParser = require('body-parser');
 var formidable = require('formidable');
 
 // Chart parser factory
-var chartParsers = require('chart-parsers');
-var parserFactory = new chartParsers.ParserFactory();
+var chartParsers = require('../chart-parsers');
 var typeLatticeParser = chartParsers.TypeLatticeParser;
+var lexiconParser = chartParsers.LexiconParser;
+var grammarParser = chartParsers.GrammarParser;
+var parserFactory = new chartParsers.ParserFactory();
 
 var natural = require('natural');
 
 var settings = {};
+
+function initialise() {
+  settings.tokenizerAlgorithm = 'Word tokenizer';
+  settings.regularExpression = '';
+  settings.typeLatticeFile = '';
+  settings.typeLattice = null;
+  settings.applyAppropriateFunction = true;
+  settings.lexiconFile = '';
+  settings.stripWordsNotInLexicon = false;
+  settings.lexicon = null;
+  settings.grammarFile = '';
+  settings.grammar = null;
+}
 
 // Page for loading a grammar
 function editSettings(req, res) {
@@ -43,20 +64,36 @@ function editSettings(req, res) {
 function submitSettings(req, res) {
   var form = new formidable.IncomingForm();
   form.parse(req, function(err, fields, files) {
-    console.log(JSON.stringify(fields));
+    logger.debug('submitSettings: fields: ' + JSON.stringify(fields, null, 2));
+    logger.debug('submitSettings: files: ' + JSON.stringify(files, null, 2));
     switch(fields.submit_settings) {
       case 'Edit type lattice':
         if (files.typeLatticeFile) {
           settings.typeLatticeFile = files.typeLatticeFile.name;
           fs.readFile(files.typeLatticeFile.path, 'utf8', function (error, text) {
             settings.typeLatticeText = text;
-            res.render('edit_file', {text: text});
+            res.render('edit_file', {filename: settings.typeLatticeFile, 
+              text: text});
           });
         }
         break;
       case 'Edit lexicon':
+        if (files.lexiconFile) {
+          settings.lexiconFile = files.lexiconFile.name;
+          fs.readFile(files.lexiconFile.path, 'utf8', function (error, text) {
+            settings.lexiconText = text;
+            res.render('edit_file', {text: text});
+          });
+        }
         break;
       case 'Edit grammar':
+        if (files.grammarFile) {
+          settings.grammarFile = files.grammarFile.name;
+          fs.readFile(files.grammarFile.path, 'utf8', function (error, text) {
+            settings.grammarText = text;
+            res.render('edit_file', {text: text});
+          });
+        }
         break;
       case 'Save':
         if (files.typeLatticeFile) {
@@ -64,24 +101,26 @@ function submitSettings(req, res) {
           fs.readFile(files.typeLatticeFile.path, 'utf8', function (error, text) {
             settings.typeLatticeText = text;
             settings.typeLattice = typeLatticeParser.parse(text);
-          });
-        }
-        if (files.lexiconFile) {
-          settings.lexiconFile = files.lexiconFile;
-          fs.readFile(files.lexiconFile.path, 'utf8', function (error, text) {
-              // process lexicon file
-          });
-        }
-        if (files.grammarFile) {
-          settings.grammarFile = files.grammarFile;
-          fs.readFile(files.grammarFile.path, 'utf8', function (error, text) {
-              // process grammar file
+            if (files.lexiconFile) {
+              settings.lexiconFile = files.lexiconFile.name;
+              fs.readFile(files.lexiconFile.path, 'utf8', function (error, text) {
+                settings.lexiconText = text;
+                settings.lexicon = lexiconParser.parse(text, {type_lattice: settings.typeLattice});
+                if (files.grammarFile) {
+                  settings.grammarFile = files.grammarFile.name;
+                  fs.readFile(files.grammarFile.path, 'utf8', function (error, text) {
+                    settings.grammarText = text;
+                    settings.grammar = grammarParser.parse(text, {type_lattice: settings.typeLattice});
+                  });
+                  res.render('edit_settings', {settings: settings});
+                }
+              });
+            }
           });
         }
         break;
       default: // Cancel
     }
-    res.redirect('edit_settings');
   });
 };
 
@@ -144,6 +183,8 @@ function tagSentence(req, res) {
 
 
 (function main() {
+  initialise();
+  
   // view engine setup
   app.set('views', path.join(__dirname, 'views'));
   app.set('view engine', 'jade');

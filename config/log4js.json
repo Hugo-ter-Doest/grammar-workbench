@@ -1,0 +1,12 @@
+{
+  "appenders": [
+    {
+      "type": "console",
+      "category": "grammar-workbench"
+    }
+  ],
+  "levels": {
+    "grammar-workbench": "DEBUG"
+  },
+  "replaceConsole": true
+}
