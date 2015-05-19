@@ -57,7 +57,7 @@ block content
               input(type='submit', name='submit_settings', value='Edit lexicon')
             li
               label
-                input(type="checkbox", name="applyUnification", value="Apply unification")
+                input(type="checkbox", name="stripWordsNotInLexicon", checked="#{settings.stripWordsNotInLexicon}")
                 = " Strip words that could not be tagged"
         br
         h2 Parser settings

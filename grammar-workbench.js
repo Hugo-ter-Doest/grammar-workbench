@@ -82,7 +82,8 @@ function submitSettings(req, res) {
           settings.lexiconFile = files.lexiconFile.name;
           fs.readFile(files.lexiconFile.path, 'utf8', function (error, text) {
             settings.lexiconText = text;
-            res.render('edit_file', {text: text});
+            res.render('edit_file', {filename: settings.lexiconFile, 
+              text: text});
           });
         }
         break;
@@ -91,11 +92,15 @@ function submitSettings(req, res) {
           settings.grammarFile = files.grammarFile.name;
           fs.readFile(files.grammarFile.path, 'utf8', function (error, text) {
             settings.grammarText = text;
-            res.render('edit_file', {text: text});
+            res.render('edit_file', {filename: settings.grammarFile, 
+              text: text});
           });
         }
         break;
       case 'Save':
+        settings.applyAppropriateFunction = fields.applyAppropriateFunction;
+        settings.stripWordsNotInLexicon = fields.stripWordsNotInLexicon;
+        settings.applyUnification = fields.applyUnification;
         if (files.typeLatticeFile) {
           settings.typeLatticeFile = files.typeLatticeFile.name;
           fs.readFile(files.typeLatticeFile.path, 'utf8', function (error, text) {
