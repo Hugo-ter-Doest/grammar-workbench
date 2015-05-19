@@ -1,93 +1,75 @@
 extends layout
 
 block content
-    div.form-style-1
-      form(method="post", action="/submit_settings", enctype="multipart/form-data")
-        h2 Tokenizer settings
-        fieldset
-          ul
-            li
-              label(for="tokenizerAlgorithm") Tokenizer algorithm
-            li
-              select.formstyle-1(id="tokenizerAlgorithm", name="tokenizerAlgorithm")
-                option(value="noChoice") Choose an algorithm
-                option(value="wordTokenizer") Word tokenizer
-                option(value="treebankWordTokenizer") Treebank word tokenizer
-                option(value="regexpTokenizer") Regular expression tokenizer
-                option(value="wordPunctTokenizer") Word punctuation tokenizer
-            li
-              label(for="regularExpression") Regular expression:
-            li
-              input(type="text", id="regularExpression", name="regularExpression")
-        br
-        h2 Type lattice settings
-        fieldset
-          ul
-            li
-              label(for="currentTypeLatticeFile") Current file:
-            li
-              if settings.typeLatticeFile
-                input(type="text", id="currentTypeLatticeFile", value="#{settings.typeLatticeFile}", readonly)
-              else
-                input(type="text", id="currentTypeLatticeFile", value="no file selected", readonly)
-            li
-              label(for="typeLatticeFile") Select file:
-            li
-              input(type="file", id="typeLatticeFile", name="typeLatticeFile")
-              input(type='submit', name='submit_settings', value='Edit type lattice')
-            li
-              label
-                input(type="checkbox", name="applyAppropriateFunction", checked=settings.applyAppropriateFunction)
-                = " Apply appropriate function"
-        br
-        h2 Tagger settings
-        fieldset
-          ul
-            li
-              label(for="currentLexiconFile") Current file:
-            li
-              if settings.lexiconFile
-                input(type="text", id="currentLexiconFile", value="#{settings.lexiconFile}", readonly)
-              else
-                input(type="text", id="currentLexiconFile", value="no file selected", readonly)
-            li
-              label(for="lexiconFile") Select file:
-            li
-              input(type="file", id="lexiconFile", name="lexiconFile")
-              input(type='submit', name='submit_settings', value='Edit lexicon')
-            li
-              label
-                input(type="checkbox", name="stripWordsNotInLexicon", checked="#{settings.stripWordsNotInLexicon}")
-                = " Strip words that could not be tagged"
-        br
-        h2 Parser settings
-        fieldset
-          ul
-            li
-              label(for="currentGrammarFile") Current file:
-            li
-              if settings.grammarFile
-                input(type="text", id="currentGrammarFile", value="#{settings.grammarFile}", readonly)
-              else
-                input(type="text", id="currentGrammarFile", value="no file selected", readonly)
-            li
-              label(for="grammarFile") Select file:
-            li
-              input(type="file", id="grammarFile", name="grammarFile")
-              input(type='submit', name='submit_settings', value='Edit grammar')
-            li
-              label(for="parsingAlgorithm") Parsing algorithm
-            li
-              select(id="parsingAlgorithm", name="parsingAlgorithm")
-                option(value="noChoice") Choose an algorithm
-                option(value="CYK") Cocke Younger Kasami
-                option(value="Earley") Earley
-                option(value="LeftCorner") Left-Corner
-                option(value="HeadCorner") Head-Corner
-            li
-              label(for="applyUnification")
-                input(type="checkbox", id="applyUnification", name="applyUnification", value="Apply unification")
-                = " Apply unification"
-        br
-        input(type='submit', name='submit_settings', value='Save')
-        input(type='submit', name='submit_settings', value='Cancel')
+  div.form-style-1
+   h1 Settings
+   form(method="post", action="/submit_settings", enctype="multipart/form-data")
+    div.css3-tabstrip
+     ul
+       li
+         input(type="radio" name="css3-tabstrip-0" checked="checked" id="css3-tabstrip-0-0")
+         label(for="css3-tabstrip-0-0") Tokenizer
+         div.form-style-1
+            label(for="tokenizerAlgorithm") Tokenizer algorithm
+            select(id="tokenizerAlgorithm", name="tokenizerAlgorithm")
+              option(value="noChoice") Choose an algorithm
+              option(value="wordTokenizer") Word tokenizer
+              option(value="treebankWordTokenizer") Treebank word tokenizer
+              option(value="regexpTokenizer") Regular expression tokenizer
+              option(value="wordPunctTokenizer") Word punctuation tokenizer
+            label(for="regularExpression") Regular expression:
+            input(type="text", id="regularExpression", name="regularExpression")
+       li
+         input(type="radio" name="css3-tabstrip-0" id="css3-tabstrip-0-1")
+         label(for="css3-tabstrip-0-1") Type lattice
+         div.form-style-1
+            label(for="currentTypeLatticeFile") Current file:
+            if settings.typeLatticeFile
+              input(type="text", id="currentTypeLatticeFile", value="#{settings.typeLatticeFile}", readonly)
+            else
+              input(type="text", id="currentTypeLatticeFile", value="no file selected", readonly)
+            label(for="typeLatticeFile") Select file:
+            input(type="file", id="typeLatticeFile", name="typeLatticeFile")
+            input(type='submit', name='submit_settings', value='Edit type lattice')
+            label
+              input(type="checkbox", name="applyAppropriateFunction", checked=settings.applyAppropriateFunction)
+              = " Apply appropriate function"
+       li
+         input(type="radio" name="css3-tabstrip-0" id="css3-tabstrip-0-2")
+         label(for="css3-tabstrip-0-2") Lexicon
+         div.form-style-1
+            label(for="currentLexiconFile") Current file:
+            if settings.lexiconFile
+              input(type="text", id="currentLexiconFile", value="#{settings.lexiconFile}", readonly)
+            else
+              input(type="text", id="currentLexiconFile", value="no file selected", readonly)
+            label(for="lexiconFile") Select file:
+            input(type="file", id="lexiconFile", name="lexiconFile")
+            input(type='submit', name='submit_settings', value='Edit lexicon')
+            label
+              input(type="checkbox", name="stripWordsNotInLexicon", checked="#{settings.stripWordsNotInLexicon}")
+              = " Strip words that could not be tagged"
+       li
+         input(type="radio" name="css3-tabstrip-0" id="css3-tabstrip-0-3")
+         label(for="css3-tabstrip-0-3") Grammar
+         div.form-style-1
+            label(for="currentGrammarFile") Current file:
+            if settings.grammarFile
+              input(type="text", id="currentGrammarFile", value="#{settings.grammarFile}", readonly)
+            else
+              input(type="text", id="currentGrammarFile", value="no file selected", readonly)
+            label(for="grammarFile") Select file:
+            input(type="file", id="grammarFile", name="grammarFile")
+            input(type='submit', name='submit_settings', value='Edit grammar')
+            label(for="parsingAlgorithm") Parsing algorithm
+            select(id="parsingAlgorithm", name="parsingAlgorithm")
+              option(value="noChoice") Choose an algorithm
+              option(value="CYK") Cocke Younger Kasami
+              option(value="Earley") Earley
+              option(value="LeftCorner") Left-Corner
+              option(value="HeadCorner") Head-Corner
+            label(for="applyUnification")
+              input(type="checkbox", id="applyUnification", name="applyUnification", value="Apply unification")
+              = " Apply unification"
+    input(type='submit', name='submit_settings', value='Save')
+    input(type='submit', name='submit_settings', value='Cancel')

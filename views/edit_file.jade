@@ -2,8 +2,11 @@ extends layout
 
 block content
     div.form-style-1
+      form(method="post", action="/save_file", enctype="multipart/form-data")
         label !{filename}
         div#editor
+        input(type='submit', name='save_file', value='Save')
+        input(type='submit', name='save_file', value='Cancel')
         script(type='text/javascript' src='/javascript/ACE/src-noconflict/ace.js')
         script.
           var editor = ace.edit("editor");
