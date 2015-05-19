@@ -43,6 +43,10 @@ var natural = require('natural');
 
 var settings = {};
 
+var TYPE_LATTICE_FILE = 0;
+var LEXICON_FILE = 1;
+var GRAMMAR_FILE = 2;
+
 function initialise() {
   settings.tokenizerAlgorithm = 'Word tokenizer';
   settings.regularExpression = '';
@@ -59,7 +63,7 @@ function initialise() {
 // Page for loading a grammar
 function editSettings(req, res) {
   res.render('edit_settings', {settings: settings});
-};
+}
 
 function submitSettings(req, res) {
   var form = new formidable.IncomingForm();
@@ -72,8 +76,8 @@ function submitSettings(req, res) {
           settings.typeLatticeFile = files.typeLatticeFile.name;
           fs.readFile(files.typeLatticeFile.path, 'utf8', function (error, text) {
             settings.typeLatticeText = text;
-            res.render('edit_file', {filename: settings.typeLatticeFile, 
-              text: text});
+            settings.typeLattice = null;
+            editTypeLattice(req, res);
           });
         }
         break;
@@ -82,8 +86,8 @@ function submitSettings(req, res) {
           settings.lexiconFile = files.lexiconFile.name;
           fs.readFile(files.lexiconFile.path, 'utf8', function (error, text) {
             settings.lexiconText = text;
-            res.render('edit_file', {filename: settings.lexiconFile, 
-              text: text});
+            settings.lexicon = null;
+            editLexicon(req, res);
           });
         }
         break;
@@ -92,56 +96,118 @@ function submitSettings(req, res) {
           settings.grammarFile = files.grammarFile.name;
           fs.readFile(files.grammarFile.path, 'utf8', function (error, text) {
             settings.grammarText = text;
-            res.render('edit_file', {filename: settings.grammarFile, 
-              text: text});
+            // Invalidate the grammar
+            settings.grammar = null;
+            editGrammar(req, res);
           });
         }
         break;
       case 'Save':
+        // On 'Save' all three files are loaded
+        // If the type lattice is not specified lexicon and grammar cannot be 
+        // loaded
         settings.applyAppropriateFunction = fields.applyAppropriateFunction;
         settings.stripWordsNotInLexicon = fields.stripWordsNotInLexicon;
         settings.applyUnification = fields.applyUnification;
-        if (files.typeLatticeFile) {
+        settings.typeLatticeFile = '';
+        settings.lexiconFile = '';
+        settings.grammarFile = '';
+        settings.typeLattice = null;
+        settings.lexicon = null;
+        settings.grammar = null;
+        var nr_files_to_process = 3;
+
+        function AllFilesAreProcessed() {
+          if (!nr_files_to_process) {
+            logger.debug('editSettings: FilesAreProcessed: about to render edit_settings');
+            settings.readyToCreateParser = (settings.typeLattice &&
+              settings.lexicon && settings.grammar);
+            res.render('edit_settings', {settings: settings});
+          }
+        }
+
+        if (files.typeLatticeFile.name) {
           settings.typeLatticeFile = files.typeLatticeFile.name;
           fs.readFile(files.typeLatticeFile.path, 'utf8', function (error, text) {
             settings.typeLatticeText = text;
             settings.typeLattice = typeLatticeParser.parse(text);
-            if (files.lexiconFile) {
-              settings.lexiconFile = files.lexiconFile.name;
-              fs.readFile(files.lexiconFile.path, 'utf8', function (error, text) {
-                settings.lexiconText = text;
-                settings.lexicon = lexiconParser.parse(text, {type_lattice: settings.typeLattice});
-                if (files.grammarFile) {
-                  settings.grammarFile = files.grammarFile.name;
-                  fs.readFile(files.grammarFile.path, 'utf8', function (error, text) {
-                    settings.grammarText = text;
-                    settings.grammar = grammarParser.parse(text, {type_lattice: settings.typeLattice});
-                  });
-                  res.render('edit_settings', {settings: settings});
-                }
-              });
-            }
+            nr_files_to_process--;
+            AllFilesAreProcessed();
           });
+        }
+        else {
+          nr_files_to_process--;
+          AllFilesAreProcessed();
+        }
+       if (files.lexiconFile.name) {
+          settings.lexiconFile = files.lexiconFile.name;
+          fs.readFile(files.lexiconFile.path, 'utf8', function (error, text) {
+            settings.lexiconText = text;
+            if (settings.typeLattice) {
+              settings.lexicon = lexiconParser.parse(text, {type_lattice: settings.typeLattice});
+            }
+            nr_files_to_process--;
+            AllFilesAreProcessed();
+          });
+        }
+        else {
+          nr_files_to_process--;
+          AllFilesAreProcessed();
+        }
+        if (files.grammarFile.name) {
+          settings.grammarFile = files.grammarFile.name;
+          fs.readFile(files.grammarFile.path, 'utf8', function (error, text) {
+            settings.grammarText = text;
+            if (settings.typeLattice) {
+              settings.grammar = grammarParser.parse(text, {type_lattice: settings.typeLattice});
+            }
+            nr_files_to_process--;
+            AllFilesAreProcessed();
+          });
+        }
+        else {
+          nr_files_to_process--;
+          AllFilesAreProcessed();
         }
         break;
       default: // Cancel
     }
   });
-};
+}
 
+function editTypeLattice(req, res) {
+  res.render('edit_file', {settings: settings, fileToEdit: TYPE_LATTICE_FILE});
+}
 
-function editFile(req, res) {
-  res.render('edit_file');
-};
+function editLexicon(req, res) {
+  res.render('edit_file', {settings: settings, fileToEdit: LEXICON_FILE});
+}
+
+function editGrammar(req, res) {
+  res.render('edit_file', {settings: settings, fileToEdit: GRAMMAR_FILE});
+}
 
 function saveFile(req, res) {
-  
-};
+  var form = new formidable.IncomingForm();
+  form.parse(req, function(err, fields, files) {
+    logger.debug('saveFile: fields: ' + JSON.stringify(fields, null, 2));
+    logger.debug('saveFile: files: ' + JSON.stringify(files, null, 2));
+    switch(fields.save_file) {
+      case 'Save':
+        // Set the file server side, add to a library?
+        break;
+      case 'Cancel':
+        res.redirect('edit_settings');
+        break
+      default:
+    }   
+  });
+}
 
 // Page for entering a sentence
 function inputSentenceParser(req, res) {
   res.render('input_sentence_parser');
-};
+}
 
 // Parse a sentence
 function parseSentence(req, res) {
@@ -168,11 +234,11 @@ function parseSentence(req, res) {
                               in_language: full_parse_items.length > 0,
                               parses: full_parse_items,
                               nr_items_created: chart.nr_of_items()});
-};
+}
 
 function inputSentenceTokenizer(req, res) {
   res.render('parse_sentence');
-};
+}
 
 function tokenizeSentence(req, res) {
 
@@ -180,12 +246,11 @@ function tokenizeSentence(req, res) {
 
 function inputSentenceTagger(req, res) {
   res.render('parse_sentence');
-};
+}
 
 function tagSentence(req, res) {
 
 }
-
 
 (function main() {
   initialise();
@@ -202,7 +267,9 @@ function tagSentence(req, res) {
   app.get('/edit_settings', editSettings);
   app.post('/submit_settings', submitSettings);
   
-  app.get('/edit_file', editFile);
+  app.get('/edit_grammar', editGrammar);
+  app.get('/edit_lexicon', editLexicon);
+  app.get('/edit_type_lattice', editTypeLattice);
   app.post('/save_file', saveFile);
 
   app.get('/inputSentenceTokenizer', inputSentenceTokenizer);

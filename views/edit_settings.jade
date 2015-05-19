@@ -47,7 +47,7 @@ block content
             input(type="file", id="lexiconFile", name="lexiconFile")
             input(type='submit', name='submit_settings', value='Edit lexicon')
             label
-              input(type="checkbox", name="stripWordsNotInLexicon", checked="#{settings.stripWordsNotInLexicon}")
+              input(type="checkbox", name="stripWordsNotInLexicon", checked=settings.stripWordsNotInLexicon)
               = " Strip words that could not be tagged"
        li
          input(type="radio" name="css3-tabstrip-0" id="css3-tabstrip-0-3")
@@ -69,7 +69,7 @@ block content
               option(value="LeftCorner") Left-Corner
               option(value="HeadCorner") Head-Corner
             label(for="applyUnification")
-              input(type="checkbox", id="applyUnification", name="applyUnification", value="Apply unification")
+              input(type="checkbox", id="applyUnification", name="applyUnification", checked=settings.applyUnification)
               = " Apply unification"
     input(type='submit', name='submit_settings', value='Save')
     input(type='submit', name='submit_settings', value='Cancel')
