@@ -2,22 +2,22 @@ extends layout
 
 block content
     div.form-style-1
-        form( method="post", action="/save_settings")
+        form( method="post", action="/parse_sentence")
           h2 Files loaded
           fieldset
             ul
               li
                 label Type lattice
               li
-                input(type="text", value="filename")
+                input(type="text", value=settings.typeLatticeFile)
               li
                 label
-                  input(type="checkbox", name="hasAppropriateFunction", value="hasAppropriateFunction", onclick="return false")
+                  input(type="checkbox", name="hasAppropriateFunction", value=settings.typeLatticeHasAppropriateFunction, onclick="return false")
                   = " Type lattice has appropriate function"
               li
                 label Lexicon
               li
-                input(type="text", value="filename")
+                input(type="text", value=settings.lexiconFile)
               li
                 label
                   input(type="checkbox", name="hasFeatureStructures", value="hasFeatureStructures", onclick="return false")
@@ -25,14 +25,14 @@ block content
               li
                 label Grammar
               li
-                input(type="text", value="filename")
+                input(type="text", value=settings.grammarFile)
               li
                 label
-                  input(type="checkbox", name="isCNF", value="isCNF", onclick="return false")
+                  input(type="checkbox", name="isCNF", value=settings.grammarIsInCNF, onclick="return false")
                   = " Grammar is in Chomsky Normal Form"
               li
                 label
-                  input(type="checkbox", name="hasConstraints", value="hasConstraints", onclick="return false")
+                  input(type="checkbox", name="hasConstraints", value=settings.grammarHasUnificationConstraints, onclick="return false")
                   = " Grammar has unification constraints"
           h2 Parse sentence
           fieldset
@@ -49,15 +49,15 @@ block content
                   option(value="HeadCorner") Head-Corner
               li
                 label
-                  input(type="checkbox", name="applyAppropriateFunction", value="Apply appropriate function")
+                  input(type="checkbox", name="applyAppropriateFunction", checked=settings.applyAppropriateFunction)
                   = " Apply appropriate function"
               li
                 label
-                  input(type="checkbox", name="applyUnification", value="Apply unification")
+                  input(type="checkbox", name="applyUnification", checked=settings.stripWordsNotInLexicon)
                   = " Strip words that could not be tagged"
               li
                 label
-                  input(type="checkbox", name="applyUnification", value="Apply unification")
+                  input(type="checkbox", name="applyUnification", checked=settings.applyUnification)
                   = " Apply unification"
-        br
-        input(type='submit', name='Parse', value='Parse')
+          br
+          input(type='submit', name='Parse', value='Parse')

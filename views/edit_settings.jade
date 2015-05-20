@@ -23,53 +23,74 @@ block content
          input(type="radio" name="css3-tabstrip-0" id="css3-tabstrip-0-1")
          label(for="css3-tabstrip-0-1") Type lattice
          div.form-style-1
-            label(for="currentTypeLatticeFile") Current file:
-            if settings.typeLatticeFile
-              input(type="text", id="currentTypeLatticeFile", value="#{settings.typeLatticeFile}", readonly)
-            else
-              input(type="text", id="currentTypeLatticeFile", value="no file selected", readonly)
-            label(for="typeLatticeFile") Select file:
-            input(type="file", id="typeLatticeFile", name="typeLatticeFile")
-            input(type='submit', name='submit_settings', value='Edit type lattice')
-            label
-              input(type="checkbox", name="applyAppropriateFunction", checked=settings.applyAppropriateFunction)
-              = " Apply appropriate function"
+            label(for="currentTypeLatticeFile") Current type lattice
+            fieldset(for="currentTypeLatticeFile")
+                if settings.typeLatticeFile
+                  input(type="text", value="#{settings.typeLatticeFile}", readonly)
+                else
+                  input(type="text", id="currentTypeLatticeFile", value="no file selected", readonly)
+                label
+                  input(type="checkbox", checked=settings.typeLatticeHasAppropriateFunction, disabled) 
+                  =  " Has appropriate function"
+            br
+            fieldset
+                label(for="typeLatticeFile") Select file:
+                input(type="file", id="typeLatticeFile", name="typeLatticeFile")
+                input(type='submit', name='submit_settings', value='Edit type lattice')
+                label(for="applyAppropriateFunction")
+                  input(type="checkbox", id="applyAppropriateFunction", name="applyAppropriateFunction", checked=settings.applyAppropriateFunction)
+                  = " Apply appropriate function"
        li
          input(type="radio" name="css3-tabstrip-0" id="css3-tabstrip-0-2")
          label(for="css3-tabstrip-0-2") Lexicon
          div.form-style-1
-            label(for="currentLexiconFile") Current file:
-            if settings.lexiconFile
-              input(type="text", id="currentLexiconFile", value="#{settings.lexiconFile}", readonly)
-            else
-              input(type="text", id="currentLexiconFile", value="no file selected", readonly)
-            label(for="lexiconFile") Select file:
-            input(type="file", id="lexiconFile", name="lexiconFile")
-            input(type='submit', name='submit_settings', value='Edit lexicon')
-            label
-              input(type="checkbox", name="stripWordsNotInLexicon", checked=settings.stripWordsNotInLexicon)
-              = " Strip words that could not be tagged"
+            label(for="currentLexiconFile") Current lexicon
+            fieldset(for="currentLexiconFile")
+                if settings.lexiconFile
+                  input(type="text", value="#{settings.lexiconFile}", readonly)
+                else
+                  input(type="text", id="currentLexiconFile", value="no file selected", readonly)
+                label
+                  input(type="checkbox", checked=settings.lexiconHasFeatureStructures, disabled) 
+                  = " Has feature structures"
+            br
+            fieldset
+                label(for="lexiconFile") Select file:
+                input(type="file", id="lexiconFile", name="lexiconFile")
+                input(type='submit', name='submit_settings', value='Edit lexicon')
+                label
+                  input(type="checkbox", name="stripWordsNotInLexicon", checked=settings.stripWordsNotInLexicon)
+                  = " Strip words that could not be tagged"
        li
          input(type="radio" name="css3-tabstrip-0" id="css3-tabstrip-0-3")
          label(for="css3-tabstrip-0-3") Grammar
          div.form-style-1
-            label(for="currentGrammarFile") Current file:
-            if settings.grammarFile
-              input(type="text", id="currentGrammarFile", value="#{settings.grammarFile}", readonly)
-            else
-              input(type="text", id="currentGrammarFile", value="no file selected", readonly)
-            label(for="grammarFile") Select file:
-            input(type="file", id="grammarFile", name="grammarFile")
-            input(type='submit', name='submit_settings', value='Edit grammar')
-            label(for="parsingAlgorithm") Parsing algorithm
-            select(id="parsingAlgorithm", name="parsingAlgorithm")
-              option(value="noChoice") Choose an algorithm
-              option(value="CYK") Cocke Younger Kasami
-              option(value="Earley") Earley
-              option(value="LeftCorner") Left-Corner
-              option(value="HeadCorner") Head-Corner
-            label(for="applyUnification")
-              input(type="checkbox", id="applyUnification", name="applyUnification", checked=settings.applyUnification)
-              = " Apply unification"
+            label(for="currentGrammarFile") Current grammar
+            fieldset(for="currentGrammarFile")
+                if settings.grammarFile
+                  input(type="text", value="#{settings.grammarFile}", readonly)
+                else
+                  input(type="text", id="currentGrammarFile", value="no file selected", readonly)
+                label
+                  input(type="checkbox", checked=settings.grammarIsInCNF, disabled)
+                  = " Is in Chomsky Normal Form"
+                label
+                  input(type="checkbox", checked=settings.grammarHasUnificationConstraints, disabled) 
+                  = " Has unification constraints"
+            br
+            fieldset
+                label(for="grammarFile") Select file:
+                input(type="file", id="grammarFile", name="grammarFile")
+                input(type='submit', name='submit_settings', value='Edit grammar')
+                label(for="parsingAlgorithm") Parsing algorithm
+                select(id="parsingAlgorithm", name="parsingAlgorithm")
+                  option(value="noChoice") Choose an algorithm
+                  option(value="CYK") Cocke Younger Kasami
+                  option(value="Earley") Earley
+                  option(value="LeftCorner") Left-Corner
+                  option(value="HeadCorner") Head-Corner
+                label(for="applyUnification")
+                  input(type="checkbox", id="applyUnification", name="applyUnification", checked=settings.applyUnification)
+                  = " Apply unification"
     input(type='submit', name='submit_settings', value='Save')
     input(type='submit', name='submit_settings', value='Cancel')

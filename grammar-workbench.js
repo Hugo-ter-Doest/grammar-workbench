@@ -50,14 +50,22 @@ var GRAMMAR_FILE = 2;
 function initialise() {
   settings.tokenizerAlgorithm = 'Word tokenizer';
   settings.regularExpression = '';
+  
   settings.typeLatticeFile = '';
   settings.typeLattice = null;
   settings.applyAppropriateFunction = true;
+  settings.typeLatticeHasAppropriateFunction = false;
+
   settings.lexiconFile = '';
   settings.stripWordsNotInLexicon = false;
   settings.lexicon = null;
+  settings.lexiconHasFeatureStructures = false;
+  settings.grammarInInCNF = false;
+
   settings.grammarFile = '';
   settings.grammar = null;
+  settings.grammarHasUnificationConstraints = false;
+  settings.readyToCreateParser = false;
 }
 
 // Page for loading a grammar
@@ -103,20 +111,17 @@ function submitSettings(req, res) {
         }
         break;
       case 'Save':
+        // proces tokenizer settings
+        settings.tokenizerAlgorithm = fields.tokenizerAlgorithm;
+        settings.regularExpression = fields.regularExpression;
         // On 'Save' all three files are loaded
         // If the type lattice is not specified lexicon and grammar cannot be 
         // loaded
         settings.applyAppropriateFunction = fields.applyAppropriateFunction;
         settings.stripWordsNotInLexicon = fields.stripWordsNotInLexicon;
         settings.applyUnification = fields.applyUnification;
-        settings.typeLatticeFile = '';
-        settings.lexiconFile = '';
-        settings.grammarFile = '';
-        settings.typeLattice = null;
-        settings.lexicon = null;
-        settings.grammar = null;
-        var nr_files_to_process = 3;
 
+        var nr_files_to_process = 3;
         function AllFilesAreProcessed() {
           if (!nr_files_to_process) {
             logger.debug('editSettings: FilesAreProcessed: about to render edit_settings');
@@ -131,6 +136,9 @@ function submitSettings(req, res) {
           fs.readFile(files.typeLatticeFile.path, 'utf8', function (error, text) {
             settings.typeLatticeText = text;
             settings.typeLattice = typeLatticeParser.parse(text);
+            logger.debug("submitSettings: created a new type lattice");
+            settings.typeLatticeHasAppropriateFunction = 
+              (settings.typeLattice.appropriate_function !== null);
             nr_files_to_process--;
             AllFilesAreProcessed();
           });
@@ -145,6 +153,8 @@ function submitSettings(req, res) {
             settings.lexiconText = text;
             if (settings.typeLattice) {
               settings.lexicon = lexiconParser.parse(text, {type_lattice: settings.typeLattice});
+              logger.debug("submitSettings: created a new lexicon");
+              settings.lexiconHasFeatureStructures = settings.lexicon.hasFeatureStructures;
             }
             nr_files_to_process--;
             AllFilesAreProcessed();
@@ -160,6 +170,10 @@ function submitSettings(req, res) {
             settings.grammarText = text;
             if (settings.typeLattice) {
               settings.grammar = grammarParser.parse(text, {type_lattice: settings.typeLattice});
+              logger.debug("submitSettings: created a new grammar");
+              settings.grammarHasUnificationConstraints = settings.grammar.hasUnificationConstraints;
+              settings.grammarIsInCNF = settings.grammar.is_CNF;
+              logger.debug("submitSettings: grammar is in CNF: " + settings.grammarIsInCNF);
             }
             nr_files_to_process--;
             AllFilesAreProcessed();
@@ -206,34 +220,54 @@ function saveFile(req, res) {
 
 // Page for entering a sentence
 function inputSentenceParser(req, res) {
-  res.render('input_sentence_parser');
+  res.render('parser_input', {settings: settings});
 }
 
 // Parse a sentence
 function parseSentence(req, res) {
   var sentence = req.body.input_sentence;
-  var words = new pos.Lexer().lex(sentence);
-  var taggedWords = new pos.Tagger().tag(words);
-  var N = taggedWords.length;
+  var results = {};
 
-  var parser = parserFactory.createParser({'type': req.body.parsingAlgorithm});
+  // tokenize
+  var tokenizer;
+  switch(settings.tokenizerAlgorithm) {
+    case "wordTokenizer":
+      tokenizer = new natural.WordTokenizer();
+      break;
+    case "treebankWordTokenizer":
+      tokenizer = new natural.TreebankWordTokenizer();
+      break;
+    case "regexpTokenizer": 
+      tokenizer = new natural.RegexpTokenizer(settings.regularExpression);
+      break;
+    case "wordPunctTokenizer":
+      tokenizer = new natural.WordPunctTokenizer();
+      break;
+    default:
+      tokenizer = new natural.WordTokenizer();
+  }
+  results.tokenizedSentence = tokenizer.tokenize(sentence);
 
+  // tag
+  results.taggedSentence = settings.lexicon.tagSentence(results.tokenizedSentence);
+  results.sentenceLength = results.taggedSentence.length;
+
+  // parse
+  results.parsingAlgorithm = req.body.parsingAlgorithm;
+  var parser = parserFactory.createParser({type: req.body.parsingAlgorithm,
+    grammar: settings.grammar,
+    type_lattice: settings.typeLattice});
   var start = new Date().getTime();
-  var chart = parser.parse(taggedWords, listener);
+  results.chart = parser.parse(results.taggedSentence);
   var end = new Date().getTime();
-  
-  var full_parse_items = chart.full_parse_items(parser.grammar.get_start_symbol(), 
+  results.parsingTime - end - start;
+  results.fullParseItems = results.chart.full_parse_items(parser.grammar.get_start_symbol(), 
     ((req.body.parsingAlgorithm === 'HeadCorner') || 
      (req.body.parsingAlgorithm === 'CYK')) ? 'cyk_item' : 'earleyitem');
+  results.inLanguage = (results.fullParseItems.length > 0);
 
-  res.render('parse_result', {type_of_parser: req.body.parsingAlgorithm,
-                              N: N,
-                              tagged_sentence: taggedWords,
-                              chart: chart,
-                              parsing_time: end - start,
-                              in_language: full_parse_items.length > 0,
-                              parses: full_parse_items,
-                              nr_items_created: chart.nr_of_items()});
+  // return the results
+  res.render('parser_output', {results: results});
 }
 
 function inputSentenceTokenizer(req, res) {
@@ -278,8 +312,8 @@ function tagSentence(req, res) {
   app.get('/inputSentenceTagger', inputSentenceTagger);
   app.post('/tagSentence', tagSentence);
   
-  app.get('/input_sentence_parser', inputSentenceParser);
-  app.post('/parseSentence', parseSentence);
+  app.get('/input_sentence', inputSentenceParser);
+  app.post('/parse_sentence', parseSentence);
 
   server.listen(3000);
 })();
