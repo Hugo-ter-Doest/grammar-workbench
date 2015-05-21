@@ -2,67 +2,79 @@ extends layout
 block content
   script(language="javascript" type="text/javascript" src="Jit/jit-yc.js")
   script(language="javascript" type="text/javascript" src="javascript/parse_trees.js")
-  h1 Parse results
-  div 
-    label Parser: 
-    label #{results.type_of_parser}
-  div 
-    label Tokenized sentence: 
-    label #{JSON.stringify(results.tokenizedSentence)}
-  div
-    label Sentence length: 
-    label #{results.sentenceLength}
-  div 
-    label Tagged sentence: 
-    label #{JSON.stringify(results.taggedSentence)}
-  div
-    label Parsing time: 
-    label #{results.parsingTime} ms
-  div
-    label Number of parses:
-    label #{results.fullParseItems.length}
-  div
-    label Number of items created: 
-    label #{results.nrItemsCreated} items
-  div
-    label In language: 
-    label #{results.inLanguage}
-  br
-  div
-    label Chart
-    table(border="1px")
-      tr
-        td(width="50px", height="50px", align="center")=""
-        - for (var i = 0; i < N; i++) {
-            td(width="50px", height="50px", align="center")=results.taggedSentence[i][0]
-        - }
-      tr
-        td(width="50px", height="50px", align="center")=""
-        - for (var i = 0; i < N; i++) {
-            td(width="50px", height="50px", align="center")=results.taggedSentence[i][1]
-        - }
-      tr
-        - for (var i = 0; i <= N; i++) {
-            td(width="130px", height="50px", align="center")=i
-        - }
-      tr
-        - for (var i = 0; i < N; i++) {
+  div.form-style-1
+    h2 Tokenizer output
+    fieldset.form-style-1
+      div 
+        label Tokenized sentence: 
+        label #{JSON.stringify(results.tokenizedSentence)}
+    h2 Tagger output
+    fieldset.form-style-1
+      div
+        label Sentence length: 
+        label #{results.sentenceLength}
+      div 
+        label Tagged sentence: 
+        label #{JSON.stringify(results.taggedSentence, replacer)}
+    h2 Parser output
+    fieldset.form-style-1
+      div 
+        label Parser: 
+        label #{results.type_of_parser}
+      div
+        label Parsing time: 
+        label #{results.parsingTime} ms
+      div
+        label Number of parses:
+        label #{results.fullParseItems.length}
+      div
+        label Number of items created: 
+        label #{results.nrItemsCreated} items
+      div
+        label In language: 
+        label #{results.inLanguage}
+      br
+      div
+        label Chart
+        table(border="1px")
           tr
-            td(width="30px", height="50px", align="center")=i
-            - for (var j = 1; j <= N; j++) {
-                td(width="50px", height="50px", align="left")=JSON.stringify(results.chart.get_complete_items_from_to(i, j))
+            td(width="50px", height="50px", align="center")=""
+            - for (var i = 0; i < N; i++) {
+                td(width="50px", height="50px", align="center")=results.taggedSentence[i][0]
             - }
-        - }
-    label Parse trees
-    div
-      select(name="Available parses", onChange="init_spacetree(this.options[this.selectedIndex].value))")
-        - for (var i = 0; i < results.fullParseItems.length; i++) {
-            option(value=i) #{"Parse " + i + ": " + results.fullParseItems[i].id}
-        - }
-    div(id="infovis" style="position:relative; height:700px; width:900px; border:solid 1px #333;")
-    label Feature Structure
-    
+          tr
+            td(width="50px", height="50px", align="center")=""
+            - for (var i = 0; i < N; i++) {
+                td(width="50px", height="50px", align="center")=results.taggedSentence[i][1]
+            - }
+          tr
+            - for (var i = 0; i <= N; i++) {
+                td(width="130px", height="50px", align="center")=i
+            - }
+          tr
+            - for (var i = 0; i < N; i++) {
+              tr
+                td(width="30px", height="50px", align="center")=i
+                - for (var j = 1; j <= N; j++) {
+                    td(width="50px", height="50px", align="left")=JSON.stringify(results.chart.get_complete_items_from_to(i, j))
+                - }
+            - }
+        label Parse trees
+        div
+          select(name="Available parses", onChange="init_spacetree(this.options[this.selectedIndex].value))")
+            - for (var i = 0; i < results.fullParseItems.length; i++) {
+                option(value=i) #{"Parse " + i + ": " + results.fullParseItems[i].id}
+            - }
+        div(id="infovis" style="position:relative; height:700px; width:900px; border:solid 1px #333;")
+        label Feature Structure
     script(language="javascript" type="text/javascript").
       var local_data = !{JSON.stringify(parses)};
       init_spacetree(local_data[0]);
-      
+      function replacer(key, value) {
+        if (value === 'category') {
+          return(value);
+        }
+        else {
+          return(undefined);
+        }
+      }

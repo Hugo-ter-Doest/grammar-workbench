@@ -260,7 +260,7 @@ function parseSentence(req, res) {
   var start = new Date().getTime();
   results.chart = parser.parse(results.taggedSentence);
   var end = new Date().getTime();
-  results.parsingTime - end - start;
+  results.parsingTime = end - start;
   results.fullParseItems = results.chart.full_parse_items(parser.grammar.get_start_symbol(), 
     ((req.body.parsingAlgorithm === 'HeadCorner') || 
      (req.body.parsingAlgorithm === 'CYK')) ? 'cyk_item' : 'earleyitem');

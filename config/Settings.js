@@ -18,8 +18,8 @@
 
 var config = {};
 
-config.log4js_config = '/home/hugo/Workspace/grammar-workbench/config/log4js.json';
-//config.log4js_config = '/Eclipse Workspace/grammar-workbench/config/log4js.json';
+//config.log4js_config = '/home/hugo/Workspace/grammar-workbench/config/log4js.json';
+config.log4js_config = '/Eclipse Workspace/grammar-workbench/config/log4js.json';
 
 GLOBAL.config = config;
 
