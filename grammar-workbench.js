@@ -60,8 +60,9 @@ function initialise() {
   settings.stripWordsNotInLexicon = false;
   settings.lexicon = null;
   settings.lexiconHasFeatureStructures = false;
+  settings.useWordnet = false;
+  
   settings.grammarInInCNF = false;
-
   settings.grammarFile = '';
   settings.grammar = null;
   settings.grammarHasUnificationConstraints = false;
@@ -223,12 +224,61 @@ function inputSentenceParser(req, res) {
   res.render('parser_input', {settings: settings});
 }
 
+// Tag the sentence using Wordnet
+// Wordnet 'knows' only a limited set of lexical categories:
+// n    NOUN
+// v    VERB
+// a    ADJECTIVE
+// s    ADJECTIVE SATELLITE
+// r    ADVERB 
+// If a word is not found in wordnet POS 'unknown' is assigned
+function tag_sentence_wordnet(tagged_sentence, callback) {
+  var wordnet = new natural.WordNet();
+  var wordnet_results = {};
+  var nr_tokens = tagged_sentence.length;
+
+  tagged_sentence.forEach(function(tagged_word) {
+    logger.debug("tag_sentence: processing " + tagged_word);
+    wordnet.lookup(tagged_word[0], function(results) {
+      results.forEach(function(result) {
+        if (tagged_word.lastIndexOf(result.pos) <= 0) {
+          tagged_word.push(result.pos);
+          logger.debug("Lexical category of " + tagged_word[0] + " is: " + result.pos);
+        }
+      });
+
+      nr_tokens--;
+      if (nr_tokens === 0) {
+        logger.info("Exit tag_sentence_wordnet: " + JSON.stringify(tagged_sentence));
+        callback(tagged_sentence);
+      }
+    });
+  });
+}
+
+function tag_sentence_function_words(fw_tagger, tokenized_sentence) {
+  var tagged_sentence = [];
+  
+  logger.debug("Enter tag_sentence_function_words( " + fw_tagger + ", " + tokenized_sentence + ")");
+  tokenized_sentence.forEach(function(token) {
+    var tagged_word = [token];
+    var fw_tags = fw_tagger.tag_word(token);
+    logger.debug("tag_sentence_function_words: function word tags: " + fw_tags);
+    if (fw_tags) {
+      tagged_word = tagged_word.concat(fw_tags);
+    }
+    tagged_sentence.push(tagged_word);
+  });
+  logger.info("Exit tag_sentence_function_words: " + JSON.stringify(tagged_sentence));
+  return(tagged_sentence);
+}
+
 // Parse a sentence
 function parseSentence(req, res) {
   var sentence = req.body.input_sentence;
   var results = {};
 
-  // tokenize
+  // Tokenize
   var tokenizer;
   switch(settings.tokenizerAlgorithm) {
     case "wordTokenizer":
@@ -245,29 +295,55 @@ function parseSentence(req, res) {
       break;
     default:
       tokenizer = new natural.WordTokenizer();
+      settings.tokenizer = "wordTokenizer";
   }
   results.tokenizedSentence = tokenizer.tokenize(sentence);
 
-  // tag
-  results.taggedSentence = settings.lexicon.tagSentence(results.tokenizedSentence);
-  results.sentenceLength = results.taggedSentence.length;
+  // Tag
+  if (settings.useWordnet) {
+    results.taggedSentence = tag_sentence_function_words(fw_tagger, tokenized_sentence);
+    tag_sentence_wordnet(tagged_sentence, function(tagged_sentence) {
+      results.taggedSentence = tagged_sentence;
+      continueParseSentence();
+    });
+  }
+  else {
+    results.taggedSentence = settings.lexicon.tagSentence(results.tokenizedSentence);
+    results.taggedSentencePrettyPrint = '';
+    results.taggedSentence.forEach(function(taggedWord) {
+      taggedWord.forEach(function(tag, index) {
+        if (!index) {
+          results.taggedSentencePrettyPrint += tag + '\n';
+        }
+        else {
+          results.taggedSentencePrettyPrint += tag.pretty_print() + '\n';
+        }
+      });
+    });
+    results.sentenceLength = results.taggedSentence.length;
+    logger.debug(JSON.stringify(results.taggedSentence, null, 2));
+    continueParseSentence();
+  }
 
-  // parse
-  results.parsingAlgorithm = req.body.parsingAlgorithm;
-  var parser = parserFactory.createParser({type: req.body.parsingAlgorithm,
-    grammar: settings.grammar,
-    type_lattice: settings.typeLattice});
-  var start = new Date().getTime();
-  results.chart = parser.parse(results.taggedSentence);
-  var end = new Date().getTime();
-  results.parsingTime = end - start;
-  results.fullParseItems = results.chart.full_parse_items(parser.grammar.get_start_symbol(), 
-    ((req.body.parsingAlgorithm === 'HeadCorner') || 
-     (req.body.parsingAlgorithm === 'CYK')) ? 'cyk_item' : 'earleyitem');
-  results.inLanguage = (results.fullParseItems.length > 0);
+  // Parse
+  function continueParseSentence() {
+    results.parsingAlgorithm = req.body.parsingAlgorithm;
+    var parser = parserFactory.createParser({type: req.body.parsingAlgorithm,
+      grammar: settings.grammar,
+      type_lattice: settings.typeLattice});
+    var start = new Date().getTime();
+    results.chart = parser.parse(results.taggedSentence);
+    var end = new Date().getTime();
+    results.parsingTime = end - start;
+    results.fullParseItems = results.chart.full_parse_items(parser.grammar.get_start_symbol(), 
+      ((req.body.parsingAlgorithm === 'HeadCorner') || 
+       (req.body.parsingAlgorithm === 'CYK')) ? 'cyk_item' : 'earleyitem');
+    results.inLanguage = (results.fullParseItems.length > 0);
+    results.nrOfItems = results.chart.nr_of_items();
 
-  // return the results
-  res.render('parser_output', {results: results});
+    // return the results
+    res.render('parser_output', {results: results});
+  }
 }
 
 function inputSentenceTokenizer(req, res) {

@@ -61,6 +61,11 @@ block content
                 label
                   input(type="checkbox", name="stripWordsNotInLexicon", checked=settings.stripWordsNotInLexicon)
                   = " Strip words that could not be tagged"
+            br
+            fieldset
+                label
+                  input(type="checkbox", name="useWordnet", checked=settings.useWordnet)
+                  = " Use Wordnet"
        li
          input(type="radio" name="css3-tabstrip-0" id="css3-tabstrip-0-3")
          label(for="css3-tabstrip-0-3") Grammar
