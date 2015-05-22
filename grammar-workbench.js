@@ -273,6 +273,16 @@ function tag_sentence_function_words(fw_tagger, tokenized_sentence) {
   return(tagged_sentence);
 }
 
+function listOfCategories(taggedWord) {
+  var list = "";
+  taggedWord.forEach(function(tag, index) {
+    if (index) { // 0-th index is the word itself
+      list += tag.features.category.type.name + ' ';
+    }
+  });
+  return(list);
+}
+
 // Parse a sentence
 function parseSentence(req, res) {
   var sentence = req.body.input_sentence;
@@ -304,6 +314,7 @@ function parseSentence(req, res) {
     results.taggedSentence = tag_sentence_function_words(fw_tagger, tokenized_sentence);
     tag_sentence_wordnet(tagged_sentence, function(tagged_sentence) {
       results.taggedSentence = tagged_sentence;
+      createTaggedSentenceCategories();
       continueParseSentence();
     });
   }
@@ -322,9 +333,26 @@ function parseSentence(req, res) {
     });
     results.sentenceLength = results.taggedSentence.length;
     logger.debug(JSON.stringify(results.taggedSentence, null, 2));
+    createTaggedSentenceCategories();
     continueParseSentence();
   }
 
+  function createTaggedSentenceCategories() {
+    results.taggedSentenceCategories = [];
+    results.taggedSentence.forEach(function(taggedWord, i) {
+      str = '';
+      taggedWord.forEach(function(tag, j) {
+        if (j) { // 0-th index is the word itself
+          str += tag.features.category.type.name + ', ';
+        }
+      });
+      if (str.length) {
+        str = str.substring(0, str.length - 2);
+      }
+      results.taggedSentenceCategories[i] = str;
+    });
+  }
+  
   // Parse
   function continueParseSentence() {
     results.parsingAlgorithm = req.body.parsingAlgorithm;

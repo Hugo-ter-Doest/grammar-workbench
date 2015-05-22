@@ -5,22 +5,22 @@ block content
   div.form-style-1
     h2 Tokenizer output
     fieldset.form-style-1
+      div
+        label Sentence length: 
+        input(type="text", value=results.sentenceLength, readonly)
       div 
         label Tokenized sentence: 
         input(type="text", value="#{JSON.stringify(results.tokenizedSentence)}", readonly)
     h2 Tagger output
     fieldset.form-style-1
-      div
-        label Sentence length: 
-        input(type="text", value=results.sentenceLength, readonly)
       div 
         label Tagged sentence: 
         textarea(rows="20" cols="80")
-          #{value=results.taggedSentencePrettyPrint}
+          |#{results.taggedSentencePrettyPrint}
     h2 Parser output
     fieldset.form-style-1
       div 
-        label Parser: 
+        label Parsing algorithm: 
         input(type="text", value=results.parsingAlgorithm, readonly)
       div
         label Parsing time: 
@@ -46,7 +46,7 @@ block content
           tr
             td(width="50px", height="50px", align="center")=""
             - for (var i = 0; i < results.sentenceLength; i++) {
-                td(width="50px", height="50px", align="center")=results.taggedSentence[i][1]
+                td(width="50px", height="50px", align="center")=results.taggedSentenceCategories[i]
             - }
           tr
             - for (var i = 0; i <= results.sentenceLength; i++) {
@@ -57,17 +57,24 @@ block content
               tr
                 td(width="30px", height="50px", align="center")=i
                 - for (var j = 1; j <= results.sentenceLength; j++) {
-                    td(width="50px", height="50px", align="left")=JSON.stringify(results.chart.get_complete_items_from_to(i, j))
+                    td(width="50px", height="50px", align="left")=results.chart.get_complete_items_from_to(i, j).length
                 - }
             - }
         label Parse trees
         div
-          select(name="Available parses", onChange="init_spacetree(this.options[this.selectedIndex].value))")
+          select(name="Available parses", onChange="updateTreeAndFS(this.options[this.selectedIndex].value))")
             - for (var i = 0; i < results.fullParseItems.length; i++) {
                 option(value=i) #{"Parse " + i + ": " + results.fullParseItems[i].id}
             - }
         div(id="infovis" style="position:relative; height:700px; width:900px; border:solid 1px #333;")
         label Feature Structure
+        textarea(id="textAreaFS", rows="20" cols="80")
+          |#{results.fullParseItems[0].data.fs.pretty_print()}
     script(language="javascript" type="text/javascript").
       var local_data = !{JSON.stringify(results.fullParseItems)};
       init_spacetree(local_data[0]);
+      function updateTreeAndFS(index) {
+        init_spacetree(local_data[index]);
+        var ta = document.getElementById("textAreaFS");
+        ta.value = local_data[index].fs.pretty_print();
+      }
