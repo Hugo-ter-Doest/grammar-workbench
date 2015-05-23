@@ -21,7 +21,7 @@ block content
     fieldset.form-style-1
       div 
         label Parsing algorithm: 
-        input(type="text", value=results.parsingAlgorithm, readonly)
+        input(type="text", value=settings.parsingAlgorithm, readonly)
       div
         label Parsing time: 
         input(type="text", value="#{results.parsingTime} ms", readonly)
@@ -69,7 +69,10 @@ block content
         div(id="infovis" style="position:relative; height:700px; width:900px; border:solid 1px #333;")
         label Feature Structure
         textarea(id="textAreaFS", rows="20" cols="80")
-          |#{results.fullParseItems[0].data.fs.pretty_print()}
+          if (results.fullParseItems.length)
+            |#{results.fullParseItems[0].data.fs.pretty_print()}
+          else
+            |hi
     script(language="javascript" type="text/javascript").
       var local_data = !{JSON.stringify(results.fullParseItems)};
       init_spacetree(local_data[0]);

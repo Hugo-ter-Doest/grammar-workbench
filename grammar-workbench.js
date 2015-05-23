@@ -83,6 +83,7 @@ function submitSettings(req, res) {
       case 'Edit type lattice':
         if (files.typeLatticeFile) {
           settings.typeLatticeFile = files.typeLatticeFile.name;
+          settings.applyAppropriateFunction = fields.applyAppropriateFunction;
           fs.readFile(files.typeLatticeFile.path, 'utf8', function (error, text) {
             settings.typeLatticeText = text;
             settings.typeLattice = null;
@@ -355,22 +356,28 @@ function parseSentence(req, res) {
   
   // Parse
   function continueParseSentence() {
-    results.parsingAlgorithm = req.body.parsingAlgorithm;
-    var parser = parserFactory.createParser({type: req.body.parsingAlgorithm,
+    settings.parsingAlgorithm = req.body.parsingAlgorithm;
+    settings.applyAppropriateFunction = req.body.applyAppropriateFunction;
+    settings.applyUnification = req.body.applyUnification;
+    var parser = parserFactory.createParser({type: settings.parsingAlgorithm,
+      unification: true,
       grammar: settings.grammar,
-      type_lattice: settings.typeLattice});
+      type_lattice: settings.typeLattice,
+      appropriate_function: false});
     var start = new Date().getTime();
     results.chart = parser.parse(results.taggedSentence);
     var end = new Date().getTime();
     results.parsingTime = end - start;
+
     results.fullParseItems = results.chart.full_parse_items(parser.grammar.get_start_symbol(), 
       ((req.body.parsingAlgorithm === 'HeadCorner') || 
        (req.body.parsingAlgorithm === 'CYK')) ? 'cyk_item' : 'earleyitem');
+    logger.debug(JSON.stringify(results.fullParseItems[0].data.fs, 0, 2));
     results.inLanguage = (results.fullParseItems.length > 0);
     results.nrOfItems = results.chart.nr_of_items();
 
     // return the results
-    res.render('parser_output', {results: results});
+    res.render('parser_output', {settings: settings, results: results});
   }
 }
 
