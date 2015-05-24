@@ -396,9 +396,12 @@ function parseSentence(req, res) {
     results.nrOfItems = results.chart.nr_of_items();
 
     // Prepare pretty_prints of the feature structures
-    results.fullParseItems.forEach(function(item) {
-      item.data.fsPretty = item.data.fs.pretty_print();
-    });
+    if (settings.applyUnification) {
+      results.fullParseItems.forEach(function(item) {
+        item.data.fsPretty = item.data.fs.pretty_print();
+      });
+    }
+    
     // return the results
     res.render('parser_output', {settings: settings, results: results});
   }
