@@ -83,7 +83,6 @@ function submitSettings(req, res) {
       case 'Edit type lattice':
         if (files.typeLatticeFile) {
           settings.typeLatticeFile = files.typeLatticeFile.name;
-          settings.applyAppropriateFunction = fields.applyAppropriateFunction;
           fs.readFile(files.typeLatticeFile.path, 'utf8', function (error, text) {
             settings.typeLatticeText = text;
             settings.typeLattice = null;
@@ -119,10 +118,18 @@ function submitSettings(req, res) {
         // On 'Save' all three files are loaded
         // If the type lattice is not specified lexicon and grammar cannot be 
         // loaded
-        settings.applyAppropriateFunction = fields.applyAppropriateFunction;
-        settings.stripWordsNotInLexicon = fields.stripWordsNotInLexicon;
-        settings.applyUnification = fields.applyUnification;
-
+        settings.applyAppropriateFunction = fields.applyAppropriateFunction
+          ? true
+          : false;
+        settings.stripWordsNotInLexicon = fields.stripWordsNotInLexicon
+          ? true
+          : false;
+        settings.useWordnet = fields.useWordnet
+          ? true
+          : false;
+        settings.applyUnification = fields.applyUnification
+          ? true
+          : false;
         var nr_files_to_process = 3;
         function AllFilesAreProcessed() {
           if (!nr_files_to_process) {
@@ -286,7 +293,7 @@ function listOfCategories(taggedWord) {
 
 // Parse a sentence
 function parseSentence(req, res) {
-  var sentence = req.body.input_sentence;
+  var sentence = req.body.inputSentence;
   var results = {};
 
   // Tokenize
@@ -357,25 +364,41 @@ function parseSentence(req, res) {
   // Parse
   function continueParseSentence() {
     settings.parsingAlgorithm = req.body.parsingAlgorithm;
-    settings.applyAppropriateFunction = req.body.applyAppropriateFunction;
-    settings.applyUnification = req.body.applyUnification;
-    var parser = parserFactory.createParser({type: settings.parsingAlgorithm,
-      unification: true,
+    settings.applyAppropriateFunction = req.body.applyAppropriateFunction
+      ? true
+      : false;
+    logger.debug('parseSentence: applyAppropriateFunction: ' + settings.applyAppropriateFunction );
+    settings.applyUnification = req.body.applyUnification
+      ? true
+      : false;
+    var parser = parserFactory.createParser({
+      type: settings.parsingAlgorithm,
+      unification: settings.applyUnification,
       grammar: settings.grammar,
       type_lattice: settings.typeLattice,
-      appropriate_function: false});
+      appropriate_function: settings.applyAppropriateFunction
+    });
+
+    logger.debug('parseSentence: GLOBAL.config.UNIFICATION: ' + GLOBAL.config.UNIFICATION);
+    logger.debug('parseSentence: GLOBAL.config.APPROPRIATE_FUNCTION: ' + GLOBAL.config.APPROPRIATE_FUNCTION);
+
     var start = new Date().getTime();
     results.chart = parser.parse(results.taggedSentence);
     var end = new Date().getTime();
     results.parsingTime = end - start;
 
-    results.fullParseItems = results.chart.full_parse_items(parser.grammar.get_start_symbol(), 
-      ((req.body.parsingAlgorithm === 'HeadCorner') || 
-       (req.body.parsingAlgorithm === 'CYK')) ? 'cyk_item' : 'earleyitem');
-    logger.debug(JSON.stringify(results.fullParseItems[0].data.fs, 0, 2));
+    results.fullParseItems = results.chart.full_parse_items(parser.grammar.get_start_symbol(),
+      ((req.body.parsingAlgorithm === 'HeadCorner') ||
+       (req.body.parsingAlgorithm === 'CYK'))
+      ? 'cyk_item'
+      : 'earleyitem');
     results.inLanguage = (results.fullParseItems.length > 0);
     results.nrOfItems = results.chart.nr_of_items();
 
+    // Prepare pretty_prints of the feature structures
+    results.fullParseItems.forEach(function(item) {
+      item.data.fsPretty = item.data.fs.pretty_print();
+    });
     // return the results
     res.render('parser_output', {settings: settings, results: results});
   }

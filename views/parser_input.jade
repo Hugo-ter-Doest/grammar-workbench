@@ -3,46 +3,15 @@ extends layout
 block content
     div.form-style-1
         form( method="post", action="/parse_sentence")
-          h2 Files loaded
-          fieldset
-            ul
-              li
-                label Type lattice
-              li
-                input(type="text", value=settings.typeLatticeFile)
-              li
-                label
-                  input(type="checkbox", name="hasAppropriateFunction", value=settings.typeLatticeHasAppropriateFunction, onclick="return false")
-                  = " Type lattice has appropriate function"
-              li
-                label Lexicon
-              li
-                input(type="text", value=settings.lexiconFile)
-              li
-                label
-                  input(type="checkbox", name="hasFeatureStructures", value="hasFeatureStructures", onclick="return false")
-                  = " Lexicon assigns feature structures"
-              li
-                label Grammar
-              li
-                input(type="text", value=settings.grammarFile)
-              li
-                label
-                  input(type="checkbox", name="isCNF", value=settings.grammarIsInCNF, onclick="return false")
-                  = " Grammar is in Chomsky Normal Form"
-              li
-                label
-                  input(type="checkbox", name="hasConstraints", value=settings.grammarHasUnificationConstraints, onclick="return false")
-                  = " Grammar has unification constraints"
           h2 Parse sentence
           fieldset
             ul
               li
                 label Input sentence:
-                input(type="text", name="input_sentence", width="300px")
+                input(type="text", name="inputSentence", width="300px")
               li
                 select(id="parsingAlgorithm", name="parsingAlgorithm")
-                  option(value="noChoise") Choose an algorithm
+                  option(value="noChoice") Choose an algorithm
                   option(value="CYK") CYK
                   option(value="Earley") Earley
                   option(value="LeftCorner") Left-Corner
