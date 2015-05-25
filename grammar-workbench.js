@@ -56,12 +56,13 @@ function initialise() {
   settings.applyAppropriateFunction = true;
   settings.typeLatticeHasAppropriateFunction = false;
 
+  settings.taggingAlgorithm = '';
   settings.lexiconFile = '';
   settings.stripWordsNotInLexicon = false;
   settings.lexicon = null;
   settings.lexiconHasFeatureStructures = false;
-  settings.useWordnet = false;
   
+  settings.parsingAlgorithm = '';
   settings.grammarInInCNF = false;
   settings.grammarFile = '';
   settings.grammar = null;
@@ -318,31 +319,50 @@ function parseSentence(req, res) {
   results.tokenizedSentence = tokenizer.tokenize(sentence);
 
   // Tag
-  if (settings.useWordnet) {
-    results.taggedSentence = tag_sentence_function_words(fw_tagger, tokenized_sentence);
-    tag_sentence_wordnet(tagged_sentence, function(tagged_sentence) {
-      results.taggedSentence = tagged_sentence;
-      createTaggedSentenceCategories();
-      continueParseSentence();
-    });
-  }
-  else {
-    results.taggedSentence = settings.lexicon.tagSentence(results.tokenizedSentence);
-    results.taggedSentencePrettyPrint = '';
-    results.taggedSentence.forEach(function(taggedWord) {
-      taggedWord.forEach(function(tag, index) {
-        if (!index) {
-          results.taggedSentencePrettyPrint += tag + '\n';
-        }
-        else {
-          results.taggedSentencePrettyPrint += tag.pretty_print() + '\n';
-        }
+  switch (settings.taggingAlgorithm) {
+    case "fsPOSTagger":
+      // Assigns a list of feature structures
+      results.taggedSentence = settings.lexicon.tagSentence(results.tokenizedSentence);
+      results.taggedSentencePrettyPrint = '';
+      results.taggedSentence.forEach(function(taggedWord) {
+        taggedWord.forEach(function(tag, index) {
+          if (!index) {
+            results.taggedSentencePrettyPrint += tag + '\n';
+          }
+          else {
+            results.taggedSentencePrettyPrint += tag.pretty_print() + '\n';
+          }
+        });
       });
-    });
-    results.sentenceLength = results.taggedSentence.length;
-    logger.debug(JSON.stringify(results.taggedSentence, null, 2));
-    createTaggedSentenceCategories();
-    continueParseSentence();
+      results.sentenceLength = results.taggedSentence.length;
+      logger.debug(JSON.stringify(results.taggedSentence, null, 2));
+      createTaggedSentenceCategories();
+      continueParseSentence();    
+      break;
+    case "simplePOSTagger":
+      // Assigns a list of lexical categories
+      break;
+    case "brillPOSTagger":
+      // Assigns a list of lexical categories based on Brill's transformation rules
+      break;
+    case "Wordnet":
+      results.taggedSentence = tag_sentence_function_words(fw_tagger, tokenized_sentence);
+      tag_sentence_wordnet(tagged_sentence, function(tagged_sentence) {
+        results.taggedSentence = tagged_sentence;
+        createTaggedSentenceCategories();
+        continueParseSentence();
+      });
+      break;
+    default:
+  }
+  
+  // Postprocess tagging
+  if (settings.assignFunctionWordTags) {
+  
+  }
+  
+  if (settings.stripWordsNotInLexicon) {
+  
   }
 
   function createTaggedSentenceCategories() {

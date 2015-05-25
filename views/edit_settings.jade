@@ -23,6 +23,9 @@ block content
          input(type="radio" name="css3-tabstrip-0" id="css3-tabstrip-0-1")
          label(for="css3-tabstrip-0-1") Type lattice
          div.form-style-1
+            label(for="applyAppropriateFunction")
+              input(type="checkbox", id="applyAppropriateFunction", name="applyAppropriateFunction", checked=settings.applyAppropriateFunction)
+              = " Apply appropriate function"
             label(for="currentTypeLatticeFile") Current type lattice
             fieldset(for="currentTypeLatticeFile")
                 if settings.typeLatticeFile
@@ -37,13 +40,23 @@ block content
                 label(for="typeLatticeFile") Select file:
                 input(type="file", id="typeLatticeFile", name="typeLatticeFile")
                 input(type='submit', name='submit_settings', value='Edit type lattice')
-                label(for="applyAppropriateFunction")
-                  input(type="checkbox", id="applyAppropriateFunction", name="applyAppropriateFunction", checked=settings.applyAppropriateFunction)
-                  = " Apply appropriate function"
        li
          input(type="radio" name="css3-tabstrip-0" id="css3-tabstrip-0-2")
-         label(for="css3-tabstrip-0-2") Lexicon
+         label(for="css3-tabstrip-0-2") Tagger
          div.form-style-1
+            label(for="taggingAlgorithm") Tagging algorithm
+            fieldset
+                select(id="taggingAlgorithm", name="taggingAlgorithm")
+                  option(value="noChoice") Choose an algorithm
+                  option(value="simplePOSTagger") Simple POS tagger
+                  option(value="brillPOSTagger") Brill POS tagger
+                  option(value="wordnet") Wordnet
+                label
+                  input(type="checkbox", name="assignFunctionWordTags", checked=settings.assignFunctionWordTags)
+                  = " Assign function word tags to words that could not be tagged"
+                label
+                  input(type="checkbox", name="stripWordsNotInLexicon", checked=settings.stripWordsNotInLexicon)
+                  = " Strip words that could not be tagged"                  
             label(for="currentLexiconFile") Current lexicon
             fieldset(for="currentLexiconFile")
                 if settings.lexiconFile
@@ -53,23 +66,26 @@ block content
                 label
                   input(type="checkbox", checked=settings.lexiconHasFeatureStructures, disabled) 
                   = " Has feature structures"
-            br
+            label(for="lexiconFile") Select lexicon
             fieldset
-                label(for="lexiconFile") Select file:
                 input(type="file", id="lexiconFile", name="lexiconFile")
                 input(type='submit', name='submit_settings', value='Edit lexicon')
-                label
-                  input(type="checkbox", name="stripWordsNotInLexicon", checked=settings.stripWordsNotInLexicon)
-                  = " Strip words that could not be tagged"
             br
-            fieldset
-                label
-                  input(type="checkbox", name="useWordnet", checked=settings.useWordnet)
-                  = " Use Wordnet"
        li
          input(type="radio" name="css3-tabstrip-0" id="css3-tabstrip-0-3")
-         label(for="css3-tabstrip-0-3") Grammar
+         label(for="css3-tabstrip-0-3") Parser
          div.form-style-1
+            label(for="parsingAlgorithm") Parsing algorithm
+            fieldset
+                select(id="parsingAlgorithm", name="parsingAlgorithm")
+                  option(value="noChoice") Choose an algorithm
+                  option(value="CYK") Cocke Younger Kasami
+                  option(value="Earley") Earley
+                  option(value="LeftCorner") Left-Corner
+                  option(value="HeadCorner") Head-Corner
+                label(for="applyUnification")
+                  input(type="checkbox", id="applyUnification", name="applyUnification", checked=settings.applyUnification)
+                  = " Apply unification"
             label(for="currentGrammarFile") Current grammar
             fieldset(for="currentGrammarFile")
                 if settings.grammarFile
@@ -82,20 +98,9 @@ block content
                 label
                   input(type="checkbox", checked=settings.grammarHasUnificationConstraints, disabled) 
                   = " Has unification constraints"
-            br
+            label(for="grammarFile") Select grammar
             fieldset
-                label(for="grammarFile") Select file:
                 input(type="file", id="grammarFile", name="grammarFile")
                 input(type='submit', name='submit_settings', value='Edit grammar')
-                label(for="parsingAlgorithm") Parsing algorithm
-                select(id="parsingAlgorithm", name="parsingAlgorithm")
-                  option(value="noChoice") Choose an algorithm
-                  option(value="CYK") Cocke Younger Kasami
-                  option(value="Earley") Earley
-                  option(value="LeftCorner") Left-Corner
-                  option(value="HeadCorner") Head-Corner
-                label(for="applyUnification")
-                  input(type="checkbox", id="applyUnification", name="applyUnification", checked=settings.applyUnification)
-                  = " Apply unification"
     input(type='submit', name='submit_settings', value='Save')
     input(type='submit', name='submit_settings', value='Cancel')
