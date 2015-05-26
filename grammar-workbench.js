@@ -38,8 +38,13 @@ var typeLatticeParser = chartParsers.TypeLatticeParser;
 var lexiconParser = chartParsers.LexiconParser;
 var grammarParser = chartParsers.GrammarParser;
 var parserFactory = new chartParsers.ParserFactory();
+var featureStructureFactory = new chartParsers.FeatureStructureFactory();
 
 var natural = require('natural');
+
+var simplePOSTagger = require('../simple-pos-tagger/lib/SimplePOSTagger');
+var functionWordsBase = '/home/hugo/Workspace/simple-pos-tagger/';
+var functionWordsConfigFile = functionWordsBase + "data/English/lexicon_files.json";
 
 var settings = {};
 
@@ -59,6 +64,7 @@ function initialise() {
   settings.taggingAlgorithm = '';
   settings.lexiconFile = '';
   settings.stripWordsNotInLexicon = false;
+  settings.assignFunctionWordTags = false;
   settings.lexicon = null;
   settings.lexiconHasFeatureStructures = false;
   
@@ -122,7 +128,11 @@ function submitSettings(req, res) {
         settings.applyAppropriateFunction = fields.applyAppropriateFunction
           ? true
           : false;
+        settings.taggingAlgorithm = fields.taggingAlgorithm;
         settings.stripWordsNotInLexicon = fields.stripWordsNotInLexicon
+          ? true
+          : false;
+        settings.assignFunctionWordTags = fields.assignFunctionWordTags
           ? true
           : false;
         settings.useWordnet = fields.useWordnet
@@ -265,21 +275,50 @@ function tag_sentence_wordnet(tagged_sentence, callback) {
   });
 }
 
-function tag_sentence_function_words(fw_tagger, tokenized_sentence) {
-  var tagged_sentence = [];
+// Adds function word tags to the already assigned tags
+function tagFunctionWords(results) {
+  var taggedSentence = results.taggedSentence;
   
-  logger.debug("Enter tag_sentence_function_words( " + fw_tagger + ", " + tokenized_sentence + ")");
-  tokenized_sentence.forEach(function(token) {
-    var tagged_word = [token];
-    var fw_tags = fw_tagger.tag_word(token);
-    logger.debug("tag_sentence_function_words: function word tags: " + fw_tags);
-    if (fw_tags) {
-      tagged_word = tagged_word.concat(fw_tags);
+  logger.debug("Enter tagFunctionWords( " + taggedSentence + ")");
+  tagger = new simplePOSTagger(functionWordsConfigFile);
+  taggedSentence.forEach(function(taggedWord) {
+    var functionWordTags = tagger.tag_word(taggedWord[0]);
+    logger.debug("tagFunctionWords: function word tags: " + functionWordTags);
+    if (functionWordTags) {
+      functionWordTags.forEach(function(functionWordTag) {
+        if (GLOBAL.config.LIST_OF_CATEGORIES) {
+          taggedWord.push(functionWordTag);
+        }
+        else {
+          var new_fs = featureStructureFactory.createFeatureStructure({
+            type_lattice: settings.typeLattice
+          });
+          var functionWordType = settings.typeLattice.get_type_by_name(functionWordTag);
+          var empty_fs = featureStructureFactory.createFeatureStructure({
+            type_lattice: settings.typeLattice, 
+            type: functionWordType
+          });
+          new_fs.add_feature('category', empty_fs, settings.typeLattice);
+          taggedWord.push(new_fs);
+        }
+      });
     }
-    tagged_sentence.push(tagged_word);
   });
-  logger.info("Exit tag_sentence_function_words: " + JSON.stringify(tagged_sentence));
-  return(tagged_sentence);
+  logger.debug("Exit tagFunctionWords: " + JSON.stringify(taggedSentence));
+  return(taggedSentence);
+}
+
+// Remove words from taggedSentence that were not tagged
+function stripWordsNotInLexicon(results) {
+  var taggedSentence = results.taggedSentence; 
+  var newTaggedSentence = [];
+  taggedSentence.forEach(function(taggedWord) {
+    if (taggedWord.length > 1) { 
+      // The word has tags
+      newTaggedSentence.push(taggedWord);
+    }
+  });
+  return(newTaggedSentence);
 }
 
 function listOfCategories(taggedWord) {
@@ -336,8 +375,8 @@ function parseSentence(req, res) {
       });
       results.sentenceLength = results.taggedSentence.length;
       logger.debug(JSON.stringify(results.taggedSentence, null, 2));
-      createTaggedSentenceCategories();
-      continueParseSentence();    
+      postProcessTagging();
+      continueParseSentence();
       break;
     case "simplePOSTagger":
       // Assigns a list of lexical categories
@@ -349,29 +388,37 @@ function parseSentence(req, res) {
       results.taggedSentence = tag_sentence_function_words(fw_tagger, tokenized_sentence);
       tag_sentence_wordnet(tagged_sentence, function(tagged_sentence) {
         results.taggedSentence = tagged_sentence;
-        createTaggedSentenceCategories();
+        postProcessTagging();
         continueParseSentence();
       });
       break;
     default:
   }
   
-  // Postprocess tagging
-  if (settings.assignFunctionWordTags) {
-  
-  }
-  
-  if (settings.stripWordsNotInLexicon) {
-  
-  }
+  function postProcessTagging() {
+    // Postprocess tagging: add function words tags
+    if (settings.assignFunctionWordTags) {
+      results.taggedSentence = tagFunctionWords(results);
+    }
 
-  function createTaggedSentenceCategories() {
+    // Postprocess tagging: strip words without tags
+    if (settings.stripWordsNotInLexicon) {
+      results.taggedSentence = stripWordsNotInLexicon(results);
+      results.sentenceLength = results.taggedSentence.length;
+    }
+
+    // Prepare a comma separated list of categories for pretty printing the chart
     results.taggedSentenceCategories = [];
     results.taggedSentence.forEach(function(taggedWord, i) {
       str = '';
       taggedWord.forEach(function(tag, j) {
         if (j) { // 0-th index is the word itself
-          str += tag.features.category.type.name + ', ';
+          if (GLOBAL.config.LIST_OF_CATEGORIES) {
+            str += tag + ', ';
+          }
+          else {
+            str += tag.features.category.type.name + ', ';
+          }
         }
       });
       if (str.length) {
@@ -380,7 +427,7 @@ function parseSentence(req, res) {
       results.taggedSentenceCategories[i] = str;
     });
   }
-  
+
   // Parse
   function continueParseSentence() {
     settings.parsingAlgorithm = req.body.parsingAlgorithm;
@@ -421,7 +468,7 @@ function parseSentence(req, res) {
         item.data.fsPretty = item.data.fs.pretty_print();
       });
     }
-    
+
     // return the results
     res.render('parser_output', {settings: settings, results: results});
   }
