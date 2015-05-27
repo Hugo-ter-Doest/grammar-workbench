@@ -119,15 +119,41 @@ function submitSettings(req, res) {
         }
         break;
       case 'Save':
-        // proces tokenizer settings
+        // Process tokenizer settings
         settings.tokenizerAlgorithm = fields.tokenizerAlgorithm;
         settings.regularExpression = fields.regularExpression;
-        // On 'Save' all three files are loaded
-        // If the type lattice is not specified lexicon and grammar cannot be 
-        // loaded
+        switch(settings.tokenizerAlgorithm) {
+          case "wordTokenizer":
+            settings.tokenizer = new natural.WordTokenizer();
+            break;
+          case "treebankWordTokenizer":
+            settings.tokenizer = new natural.TreebankWordTokenizer();
+            break;
+          case "regexpTokenizer": 
+            settings.tokenizer = new natural.RegexpTokenizer(settings.regularExpression);
+            break;
+          case "wordPunctTokenizer":
+            settings.tokenizer = new natural.WordPunctTokenizer();
+            break;
+          default:
+            settings.tokenizer = new natural.WordTokenizer();
+            settings.tokenizer = "wordTokenizer";
+        }
+        
+        // Process type lattice settings
         settings.applyAppropriateFunction = fields.applyAppropriateFunction
           ? true
           : false;
+        if (files.typeLatticeFile.name) {
+          settings.typeLatticeFile = files.typeLatticeFile.name;
+          settings.typeLatticeText = fs.readFileSync(files.typeLatticeFile.path, 'utf8');
+          settings.typeLattice = typeLatticeParser.parse(settings.typeLatticeText);
+          logger.debug("submitSettings: created a new type lattice");
+          settings.typeLatticeHasAppropriateFunction = 
+            (settings.typeLattice.appropriate_function !== null);
+        }
+
+        // Process tagger settings
         settings.taggingAlgorithm = fields.taggingAlgorithm;
         settings.stripWordsNotInLexicon = fields.stripWordsNotInLexicon
           ? true
@@ -135,77 +161,54 @@ function submitSettings(req, res) {
         settings.assignFunctionWordTags = fields.assignFunctionWordTags
           ? true
           : false;
-        settings.useWordnet = fields.useWordnet
-          ? true
-          : false;
-        settings.applyUnification = fields.applyUnification
-          ? true
-          : false;
-        var nr_files_to_process = 3;
-        function AllFilesAreProcessed() {
-          if (!nr_files_to_process) {
-            logger.debug('editSettings: FilesAreProcessed: about to render edit_settings');
-            settings.readyToCreateParser = (settings.typeLattice &&
-              settings.lexicon && settings.grammar);
-            res.render('edit_settings', {settings: settings});
+        if (files.lexiconFile.name) {
+          settings.lexiconFile = files.lexiconFile.name;
+          settings.lexiconText = fs.readFileSync(files.lexiconFile.path, 'utf8');
+          switch (settings.taggingAlgorithm) {
+            case "fsPOSTagger":
+              if (settings.typeLattice) {
+                settings.tagger = lexiconParser.parse(settings.lexiconText, 
+                  {type_lattice: settings.typeLattice});
+              }
+              break;
+            case "simplePOSTagger":
+              // Assigns a list of lexical categories
+              settings.tagger = new simplePOSTagger(settings.lexiconFile);
+              break;
+            case "brillPOSTagger":
+              // Assigns a list of lexical categories based on Brill's transformation rules
+              break;
+            case "Wordnet":
+              settings.tagger = tag_sentence_wordnet;
+              break;
+            default:
+              var lexicon = lexiconParser.parse(settings.lexiconText, 
+                {type_lattice: settings.typeLattice});
+              settings.tagger = lexicon;
           }
         }
 
-        if (files.typeLatticeFile.name) {
-          settings.typeLatticeFile = files.typeLatticeFile.name;
-          fs.readFile(files.typeLatticeFile.path, 'utf8', function (error, text) {
-            settings.typeLatticeText = text;
-            settings.typeLattice = typeLatticeParser.parse(text);
-            logger.debug("submitSettings: created a new type lattice");
-            settings.typeLatticeHasAppropriateFunction = 
-              (settings.typeLattice.appropriate_function !== null);
-            nr_files_to_process--;
-            AllFilesAreProcessed();
-          });
-        }
-        else {
-          nr_files_to_process--;
-          AllFilesAreProcessed();
-        }
-       if (files.lexiconFile.name) {
-          settings.lexiconFile = files.lexiconFile.name;
-          fs.readFile(files.lexiconFile.path, 'utf8', function (error, text) {
-            settings.lexiconText = text;
-            if (settings.typeLattice) {
-              settings.lexicon = lexiconParser.parse(text, {type_lattice: settings.typeLattice});
-              logger.debug("submitSettings: created a new lexicon");
-              settings.lexiconHasFeatureStructures = settings.lexicon.hasFeatureStructures;
-            }
-            nr_files_to_process--;
-            AllFilesAreProcessed();
-          });
-        }
-        else {
-          nr_files_to_process--;
-          AllFilesAreProcessed();
-        }
+        // Process parser settings
+        settings.applyUnification = fields.applyUnification
+        ? true
+        : false;
+        settings.parsingAlgorithm = fields.parsingAlgorithm;
         if (files.grammarFile.name) {
           settings.grammarFile = files.grammarFile.name;
-          fs.readFile(files.grammarFile.path, 'utf8', function (error, text) {
-            settings.grammarText = text;
-            if (settings.typeLattice) {
-              settings.grammar = grammarParser.parse(text, {type_lattice: settings.typeLattice});
-              logger.debug("submitSettings: created a new grammar");
-              settings.grammarHasUnificationConstraints = settings.grammar.hasUnificationConstraints;
-              settings.grammarIsInCNF = settings.grammar.is_CNF;
-              logger.debug("submitSettings: grammar is in CNF: " + settings.grammarIsInCNF);
-            }
-            nr_files_to_process--;
-            AllFilesAreProcessed();
-          });
+          settings.grammarText = fs.readFileSync(files.grammarFile.path, 'utf8');
+          if (settings.typeLattice) {
+            settings.grammar = grammarParser.parse(settings.grammarText, 
+              {type_lattice: settings.typeLattice});
+            logger.debug("submitSettings: created a new grammar");
+            settings.grammarHasUnificationConstraints = settings.grammar.hasUnificationConstraints;
+            settings.grammarIsInCNF = settings.grammar.is_CNF;
+            logger.debug("submitSettings: grammar is in CNF: " + settings.grammarIsInCNF);
+          }
         }
-        else {
-          nr_files_to_process--;
-          AllFilesAreProcessed();
-        }
-        break;
-      default: // Cancel
+      default: 
+        // Cancel
     }
+    res.redirect('input_sentence');
   });
 }
 
@@ -310,9 +313,8 @@ function tagFunctionWords(results) {
 
 // Remove words from taggedSentence that were not tagged
 function stripWordsNotInLexicon(results) {
-  var taggedSentence = results.taggedSentence; 
   var newTaggedSentence = [];
-  taggedSentence.forEach(function(taggedWord) {
+  results.taggedSentence.forEach(function(taggedWord) {
     if (taggedWord.length > 1) { 
       // The word has tags
       newTaggedSentence.push(taggedWord);
@@ -336,32 +338,16 @@ function parseSentence(req, res) {
   var sentence = req.body.inputSentence;
   var results = {};
 
-  // Tokenize
-  var tokenizer;
-  switch(settings.tokenizerAlgorithm) {
-    case "wordTokenizer":
-      tokenizer = new natural.WordTokenizer();
-      break;
-    case "treebankWordTokenizer":
-      tokenizer = new natural.TreebankWordTokenizer();
-      break;
-    case "regexpTokenizer": 
-      tokenizer = new natural.RegexpTokenizer(settings.regularExpression);
-      break;
-    case "wordPunctTokenizer":
-      tokenizer = new natural.WordPunctTokenizer();
-      break;
-    default:
-      tokenizer = new natural.WordTokenizer();
-      settings.tokenizer = "wordTokenizer";
-  }
-  results.tokenizedSentence = tokenizer.tokenize(sentence);
-
-  // Tag
+  // Tokenize sentence
+  results.tokenizedSentence = settings.tokenizer.tokenize(sentence);
+  
+  // Tag sentence
+  settings.stripWordsNotInLexicon = req.body.stripWordsNotInLexicon
+    ? true
+    : false;
   switch (settings.taggingAlgorithm) {
     case "fsPOSTagger":
-      // Assigns a list of feature structures
-      results.taggedSentence = settings.lexicon.tagSentence(results.tokenizedSentence);
+      results.taggedSentence = settings.tagger.tagSentence(results.tokenizedSentence);
       results.taggedSentencePrettyPrint = '';
       results.taggedSentence.forEach(function(taggedWord) {
         taggedWord.forEach(function(tag, index) {
@@ -375,27 +361,29 @@ function parseSentence(req, res) {
       });
       results.sentenceLength = results.taggedSentence.length;
       logger.debug(JSON.stringify(results.taggedSentence, null, 2));
-      postProcessTagging();
-      continueParseSentence();
+      Continue();
       break;
     case "simplePOSTagger":
       // Assigns a list of lexical categories
+      results.taggedSentence = settings.tagger.tag_sentence(results.tokenizedSentence);
+      Continue();
       break;
     case "brillPOSTagger":
       // Assigns a list of lexical categories based on Brill's transformation rules
+      Continue();
       break;
     case "Wordnet":
-      results.taggedSentence = tag_sentence_function_words(fw_tagger, tokenized_sentence);
-      tag_sentence_wordnet(tagged_sentence, function(tagged_sentence) {
+      settings.tagger(tagged_sentence, function(tagged_sentence) {
         results.taggedSentence = tagged_sentence;
-        postProcessTagging();
-        continueParseSentence();
+        Continue();
       });
       break;
     default:
+      Continue();
   }
+
   
-  function postProcessTagging() {
+  function Continue() {
     // Postprocess tagging: add function words tags
     if (settings.assignFunctionWordTags) {
       results.taggedSentence = tagFunctionWords(results);
@@ -426,10 +414,8 @@ function parseSentence(req, res) {
       }
       results.taggedSentenceCategories[i] = str;
     });
-  }
 
-  // Parse
-  function continueParseSentence() {
+    // Parse sentence
     settings.parsingAlgorithm = req.body.parsingAlgorithm;
     settings.applyAppropriateFunction = req.body.applyAppropriateFunction
       ? true
@@ -438,39 +424,44 @@ function parseSentence(req, res) {
     settings.applyUnification = req.body.applyUnification
       ? true
       : false;
-    var parser = parserFactory.createParser({
-      type: settings.parsingAlgorithm,
-      unification: settings.applyUnification,
-      grammar: settings.grammar,
-      type_lattice: settings.typeLattice,
-      appropriate_function: settings.applyAppropriateFunction
-    });
-
-    logger.debug('parseSentence: GLOBAL.config.UNIFICATION: ' + GLOBAL.config.UNIFICATION);
-    logger.debug('parseSentence: GLOBAL.config.APPROPRIATE_FUNCTION: ' + GLOBAL.config.APPROPRIATE_FUNCTION);
-
-    var start = new Date().getTime();
-    results.chart = parser.parse(results.taggedSentence);
-    var end = new Date().getTime();
-    results.parsingTime = end - start;
-
-    results.fullParseItems = results.chart.full_parse_items(parser.grammar.get_start_symbol(),
-      ((req.body.parsingAlgorithm === 'HeadCorner') ||
-       (req.body.parsingAlgorithm === 'CYK'))
-      ? 'cyk_item'
-      : 'earleyitem');
-    results.inLanguage = (results.fullParseItems.length > 0);
-    results.nrOfItems = results.chart.nr_of_items();
-
-    // Prepare pretty_prints of the feature structures
-    if (settings.applyUnification) {
-      results.fullParseItems.forEach(function(item) {
-        item.data.fsPretty = item.data.fs.pretty_print();
+    if (settings.tagger && settings.grammar && settings.typeLattice) {
+      var parser = parserFactory.createParser({
+        type: settings.parsingAlgorithm,
+        unification: settings.applyUnification,
+        grammar: settings.grammar,
+        type_lattice: settings.typeLattice,
+        appropriate_function: settings.applyAppropriateFunction
       });
-    }
 
-    // return the results
-    res.render('parser_output', {settings: settings, results: results});
+      logger.debug('parseSentence: GLOBAL.config.UNIFICATION: ' + GLOBAL.config.UNIFICATION);
+      logger.debug('parseSentence: GLOBAL.config.APPROPRIATE_FUNCTION: ' + GLOBAL.config.APPROPRIATE_FUNCTION);
+
+      var start = new Date().getTime();
+      results.chart = parser.parse(results.taggedSentence);
+      var end = new Date().getTime();
+      results.parsingTime = end - start;
+
+      results.fullParseItems = results.chart.full_parse_items(parser.grammar.get_start_symbol(),
+        ((req.body.parsingAlgorithm === 'HeadCorner') ||
+         (req.body.parsingAlgorithm === 'CYK'))
+        ? 'cyk_item'
+        : 'earleyitem');
+      results.inLanguage = (results.fullParseItems.length > 0);
+      results.nrOfItems = results.chart.nr_of_items();
+
+      // Prepare pretty_prints of the feature structures
+      if (settings.applyUnification) {
+        results.fullParseItems.forEach(function(item) {
+          item.data.fsPretty = item.data.fs.pretty_print();
+        });
+      }
+
+      // Present the results
+      res.render('parser_output', {settings: settings, results: results});
+    }
+    else {
+      res.render('edit_settings');
+    }
   }
 }
 
