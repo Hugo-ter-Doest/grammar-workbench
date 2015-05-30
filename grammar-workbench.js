@@ -173,7 +173,10 @@ function submitSettings(req, res) {
               break;
             case "simplePOSTagger":
               // Assigns a list of lexical categories
-              settings.tagger = new simplePOSTagger(settings.lexiconFile);
+              settings.tagger = new simplePOSTagger(files.lexiconFile.path, false);
+              logger.debug("submitSettings: created a Simple POS Tagger");
+              GLOBAL.config.LIST_OF_CATEGORIES = true;
+              logger.debug("submitSettings: GLOBAL.config.LIST_OF_CATEGORIES: " + GLOBAL.config.LIST_OF_CATEGORIES);
               break;
             case "brillPOSTagger":
               // Assigns a list of lexical categories based on Brill's transformation rules
@@ -211,6 +214,7 @@ function submitSettings(req, res) {
     res.redirect('input_sentence');
   });
 }
+
 
 function editTypeLattice(req, res) {
   res.render('edit_file', {settings: settings, fileToEdit: TYPE_LATTICE_FILE});
@@ -256,7 +260,6 @@ function inputSentenceParser(req, res) {
 // If a word is not found in wordnet POS 'unknown' is assigned
 function tag_sentence_wordnet(tagged_sentence, callback) {
   var wordnet = new natural.WordNet();
-  var wordnet_results = {};
   var nr_tokens = tagged_sentence.length;
 
   tagged_sentence.forEach(function(tagged_word) {
@@ -417,13 +420,10 @@ function parseSentence(req, res) {
 
     // Parse sentence
     settings.parsingAlgorithm = req.body.parsingAlgorithm;
-    settings.applyAppropriateFunction = req.body.applyAppropriateFunction
-      ? true
-      : false;
-    logger.debug('parseSentence: applyAppropriateFunction: ' + settings.applyAppropriateFunction );
-    settings.applyUnification = req.body.applyUnification
-      ? true
-      : false;
+    settings.applyAppropriateFunction = (req.body.applyAppropriateFunction === 'on');
+    logger.debug('parseSentence: applyAppropriateFunction: ' + settings.applyAppropriateFunction);
+    settings.applyUnification = (req.body.applyUnification === 'on');
+    // If we have a tagger, grammar and type lattice loaded a parser can be generated
     if (settings.tagger && settings.grammar && settings.typeLattice) {
       var parser = parserFactory.createParser({
         type: settings.parsingAlgorithm,
