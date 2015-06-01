@@ -53,27 +53,30 @@ var LEXICON_FILE = 1;
 var GRAMMAR_FILE = 2;
 
 function initialise() {
-  settings.tokenizerAlgorithm = 'Word tokenizer';
+  // Tokenizer settings
+  settings.tokenizerAlgorithm = '';
   settings.regularExpression = '';
-  
+
+  // Type lattice settings
   settings.typeLatticeFile = '';
   settings.typeLattice = null;
   settings.applyAppropriateFunction = true;
   settings.typeLatticeHasAppropriateFunction = false;
 
+  // Tagger settings
   settings.taggingAlgorithm = '';
   settings.lexiconFile = '';
   settings.stripWordsNotInLexicon = false;
   settings.assignFunctionWordTags = false;
-  settings.lexicon = null;
+  settings.tagger = null;
   settings.lexiconHasFeatureStructures = false;
-  
+
+  // Parser settings
   settings.parsingAlgorithm = '';
   settings.grammarInInCNF = false;
   settings.grammarFile = '';
   settings.grammar = null;
   settings.grammarHasUnificationConstraints = false;
-  settings.readyToCreateParser = false;
 }
 
 // Page for loading a grammar
@@ -155,12 +158,8 @@ function submitSettings(req, res) {
 
         // Process tagger settings
         settings.taggingAlgorithm = fields.taggingAlgorithm;
-        settings.stripWordsNotInLexicon = fields.stripWordsNotInLexicon
-          ? true
-          : false;
-        settings.assignFunctionWordTags = fields.assignFunctionWordTags
-          ? true
-          : false;
+        settings.stripWordsNotInLexicon = (fields.stripWordsNotInLexicon === 'on');
+        settings.assignFunctionWordTags = (fields.assignFunctionWordTags === 'on');
         if (files.lexiconFile.name) {
           settings.lexiconFile = files.lexiconFile.name;
           settings.lexiconText = fs.readFileSync(files.lexiconFile.path, 'utf8');
@@ -169,6 +168,7 @@ function submitSettings(req, res) {
               if (settings.typeLattice) {
                 settings.tagger = lexiconParser.parse(settings.lexiconText, 
                   {type_lattice: settings.typeLattice});
+                GLOBAL.config.LIST_OF_CATEGORIES = false;
               }
               break;
             case "simplePOSTagger":
@@ -180,21 +180,22 @@ function submitSettings(req, res) {
               break;
             case "brillPOSTagger":
               // Assigns a list of lexical categories based on Brill's transformation rules
+              GLOBAL.config.LIST_OF_CATEGORIES = true;
               break;
             case "Wordnet":
-              settings.tagger = tag_sentence_wordnet;
+              settings.tagger = tagSentenceWithWordnet;
+              GLOBAL.config.LIST_OF_CATEGORIES = true;
               break;
             default:
-              var lexicon = lexiconParser.parse(settings.lexiconText, 
+              settings.tagger = lexiconParser.parse(settings.lexiconText,
                 {type_lattice: settings.typeLattice});
+              GLOBAL.config.LIST_OF_CATEGORIES = false;
               settings.tagger = lexicon;
           }
         }
 
         // Process parser settings
-        settings.applyUnification = fields.applyUnification
-        ? true
-        : false;
+        settings.applyUnification = (fields.applyUnification === 'on');
         settings.parsingAlgorithm = fields.parsingAlgorithm;
         if (files.grammarFile.name) {
           settings.grammarFile = files.grammarFile.name;
@@ -214,7 +215,6 @@ function submitSettings(req, res) {
     res.redirect('input_sentence');
   });
 }
-
 
 function editTypeLattice(req, res) {
   res.render('edit_file', {settings: settings, fileToEdit: TYPE_LATTICE_FILE});
@@ -258,7 +258,7 @@ function inputSentenceParser(req, res) {
 // s    ADJECTIVE SATELLITE
 // r    ADVERB 
 // If a word is not found in wordnet POS 'unknown' is assigned
-function tag_sentence_wordnet(tagged_sentence, callback) {
+function tagSentenceWithWordnet(tagged_sentence, callback) {
   var wordnet = new natural.WordNet();
   var nr_tokens = tagged_sentence.length;
 
@@ -274,7 +274,7 @@ function tag_sentence_wordnet(tagged_sentence, callback) {
 
       nr_tokens--;
       if (nr_tokens === 0) {
-        logger.info("Exit tag_sentence_wordnet: " + JSON.stringify(tagged_sentence));
+        logger.info("Exit tagSentenceWithWordnet: " + JSON.stringify(tagged_sentence));
         callback(tagged_sentence);
       }
     });
