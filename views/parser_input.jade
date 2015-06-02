@@ -11,11 +11,11 @@ block content
                 input(type="text", name="inputSentence", width="300px")
               li
                 select(id="parsingAlgorithm", name="parsingAlgorithm")
-                  option(value="noChoice") Choose an algorithm
-                  option(value="CYK") CYK
-                  option(value="Earley") Earley
-                  option(value="LeftCorner") Left-Corner
-                  option(value="HeadCorner") Head-Corner
+                  option(value="noChoice", selected=settings.parsingAlgorithm === '') Choose an algorithm
+                  option(value="CYK", selected=settings.parsingAlgorithm === 'CYK') CYK
+                  option(value="Earley", selected=settings.parsingAlgorithm === 'Earley') Earley
+                  option(value="LeftCorner", selected=settings.parsingAlgorithm === 'LeftCorner') Left-Corner
+                  option(value="HeadCorner", selected=settings.parsingAlgorithm === 'HeadCorner') Head-Corner
               li
                 label
                   input(type="checkbox", name="applyAppropriateFunction", checked=settings.applyAppropriateFunction)

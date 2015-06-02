@@ -63,10 +63,12 @@ block content
         input(type="text", value="#{JSON.stringify(results.tokenizedSentence)}", readonly)
     h2 Tagger output
     fieldset.form-style-1
-      div 
-        label Tagged sentence: 
+      div
+        label Tagged sentence:
         textarea(rows="20" cols="80")
           |#{results.taggedSentencePrettyPrint}
+        label Stripped tokens:
+        input(type="text", value=settings.strippedTokens, readonly)
     h2 Settings used
     fieldset
       ul

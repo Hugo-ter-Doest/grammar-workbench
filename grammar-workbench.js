@@ -167,6 +167,7 @@ function submitSettings(req, res) {
                 settings.tagger = lexiconParser.parse(settings.lexiconText, 
                   {type_lattice: settings.typeLattice});
                 GLOBAL.config.LIST_OF_CATEGORIES = false;
+                settings.lexiconHasFeatureStructures = true;
               }
               break;
             case "simplePOSTagger":
@@ -256,24 +257,24 @@ function inputSentenceParser(req, res) {
 // s    ADJECTIVE SATELLITE
 // r    ADVERB 
 // If a word is not found in wordnet POS 'unknown' is assigned
-function tagSentenceWithWordnet(tagged_sentence, callback) {
+function tagSentenceWithWordnet(taggedSentence, callback) {
   var wordnet = new natural.WordNet();
-  var nr_tokens = tagged_sentence.length;
+  var nrTokens = taggedSentence.length;
 
-  tagged_sentence.forEach(function(tagged_word) {
-    logger.debug("tag_sentence: processing " + tagged_word);
-    wordnet.lookup(tagged_word[0], function(results) {
+  taggedSentence.forEach(function(taggedWord) {
+    logger.debug("tagSentenceWithWordnet: processing " + taggedWord);
+    wordnet.lookup(taggedWord[0], function(results) {
       results.forEach(function(result) {
-        if (tagged_word.lastIndexOf(result.pos) <= 0) {
-          tagged_word.push(result.pos);
-          logger.debug("Lexical category of " + tagged_word[0] + " is: " + result.pos);
+        if (taggedWord.lastIndexOf(result.pos) <= 0) {
+          taggedWord.push(result.pos);
+          logger.debug("Lexical category of " + taggedWord[0] + " is: " + result.pos);
         }
       });
 
-      nr_tokens--;
-      if (nr_tokens === 0) {
-        logger.info("Exit tagSentenceWithWordnet: " + JSON.stringify(tagged_sentence));
-        callback(tagged_sentence);
+      nrTokens--;
+      if (nrTokens === 0) {
+        logger.info("Exit tagSentenceWithWordnet: " + JSON.stringify(taggedSentence));
+        callback(taggedSentence);
       }
     });
   });
@@ -315,10 +316,15 @@ function tagFunctionWords(results) {
 // Remove words from taggedSentence that were not tagged
 function stripWordsNotInLexicon(results) {
   var newTaggedSentence = [];
+  settings.strippedTokens = [];
   results.taggedSentence.forEach(function(taggedWord) {
     if (taggedWord.length > 1) { 
-      // The word has tags
+      // The word has tags -> add to the result
       newTaggedSentence.push(taggedWord);
+    }
+    else {
+      // Add to the stripped tokens
+      settings.strippedTokens.push(taggedWord[0]);
     }
   });
   return(newTaggedSentence);
@@ -337,6 +343,7 @@ function listOfCategories(taggedWord) {
 // next is a callback and should be called after tagging has finished
 // Was added for the asynchronous calls to Wordnet.
 function tagSentence(results, next) {
+  logger.debug('inside tagSentence');
   // Tag sentence
   switch (settings.taggingAlgorithm) {
     case "fsPOSTagger":
@@ -429,8 +436,8 @@ function parseSentence(results) {
   results.parsingTime = end - start;
 
   results.fullParseItems = results.chart.full_parse_items(parser.grammar.get_start_symbol(),
-    ((req.body.parsingAlgorithm === 'HeadCorner') ||
-     (req.body.parsingAlgorithm === 'CYK'))
+    ((settings.parsingAlgorithm === 'HeadCorner') ||
+     (settings.parsingAlgorithm === 'CYK'))
     ? 'cyk_item'
     : 'earleyitem');
   results.inLanguage = (results.fullParseItems.length > 0);
@@ -463,7 +470,8 @@ function processSentence(req, res) {
       // Present the results
       res.render('parser_output', {settings: settings, results: results});
     }
-    
+
+    logger.debug('passing next to the tagger');
     tagSentence(results, next);
   }
   else {
@@ -481,10 +489,6 @@ function tokenizeSentence(req, res) {
 
 function inputSentenceTagger(req, res) {
   res.render('parse_sentence');
-}
-
-function tagSentence(req, res) {
-
 }
 
 (function main() {
