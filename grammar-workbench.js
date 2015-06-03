@@ -79,8 +79,12 @@ function initialise() {
   settings.grammarHasUnificationConstraints = false;
 }
 
+function homeView(req, res) {
+
+}
+
 // Page for loading a grammar
-function editSettings(req, res) {
+function settingsView(req, res) {
   res.render('edit_settings', {settings: settings});
 }
 
@@ -215,15 +219,15 @@ function submitSettings(req, res) {
   });
 }
 
-function editTypeLattice(req, res) {
+function editTypeLatticeView(req, res) {
   res.render('edit_file', {settings: settings, fileToEdit: TYPE_LATTICE_FILE});
 }
 
-function editLexicon(req, res) {
+function editLexiconView(req, res) {
   res.render('edit_file', {settings: settings, fileToEdit: LEXICON_FILE});
 }
 
-function editGrammar(req, res) {
+function editGrammarView(req, res) {
   res.render('edit_file', {settings: settings, fileToEdit: GRAMMAR_FILE});
 }
 
@@ -244,8 +248,24 @@ function saveFile(req, res) {
   });
 }
 
+function tokenizerView(req, res) {
+  res.render('tokenizer');
+}
+
+function tokenizeSentenceView(req, res) {
+
+}
+
+function taggerView(req, res) {
+  res.render('tagger');
+}
+
+function tagSentenceView(req, res) {
+
+}
+
 // Page for entering a sentence
-function inputSentenceParser(req, res) {
+function parserView(req, res) {
   res.render('parser_input', {settings: settings});
 }
 
@@ -451,7 +471,7 @@ function parseSentence(results) {
   }
 }
 
-function processSentence(req, res) {
+function processSentenceView(req, res) {
   var results = {};
 
   settings.stripWordsNotInLexicon = (req.body.stripWordsNotInLexicon === 'on');
@@ -480,16 +500,16 @@ function processSentence(req, res) {
   }
 }
 
-function inputSentenceTokenizer(req, res) {
-  res.render('parse_sentence');
-}
-
-function tokenizeSentence(req, res) {
+function documentationView(req, res) {
 
 }
 
-function inputSentenceTagger(req, res) {
-  res.render('parse_sentence');
+function aboutView(req, res) {
+
+}
+
+function contactView(req, res) {
+
 }
 
 (function main() {
@@ -503,23 +523,29 @@ function inputSentenceTagger(req, res) {
   app.use(bodyParser.urlencoded({
     extended: true
   }));
-  
-  app.get('/edit_settings', editSettings);
+
+  app.get('/home', homeView);
+
+  app.get('/settings', settingsView);
   app.post('/submit_settings', submitSettings);
   
-  app.get('/edit_grammar', editGrammar);
-  app.get('/edit_lexicon', editLexicon);
-  app.get('/edit_type_lattice', editTypeLattice);
+  app.get('/edit_grammar', editGrammarView);
+  app.get('/edit_lexicon', editLexiconView);
+  app.get('/edit_type_lattice', editTypeLatticeView);
   app.post('/save_file', saveFile);
 
-  app.get('/inputSentenceTokenizer', inputSentenceTokenizer);
-  app.post('/tokenizeSentence', tokenizeSentence);
+  app.get('/tokenizer', tokenizerView);
+  app.post('/tokenizeSentence', tokenizeSentenceView);
 
-  app.get('/inputSentenceTagger', inputSentenceTagger);
-  app.post('/tagSentence', tagSentence);
+  app.get('/tagger', taggerView);
+  app.post('/tagSentence', tagSentenceView);
   
-  app.get('/input_sentence', inputSentenceParser);
-  app.post('/parse_sentence', processSentence);
+  app.get('/parser', parserView);
+  app.post('/parse_sentence', processSentenceView);
+
+  app.get('/documentation', documentationView);
+  app.get('/about', aboutView);
+  app.get('/contact', contactView);
 
   server.listen(3000);
 })();

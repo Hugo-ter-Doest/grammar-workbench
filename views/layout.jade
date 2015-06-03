@@ -4,4 +4,30 @@ html
     title= title
     link(rel='stylesheet', href='/stylesheets/stylesheet.css')
   body
-    block content
+      div.align-center(id='cssmenu')
+        ul
+          li(class='active')
+            a(href='/home')
+              span Home
+          li
+            a(href='/tokenizer')
+              span Tokenizer
+          li
+            a(href='/tagger')
+              span Tagger
+          li
+            a(href='/parser')
+              span Parser
+          li
+            a(href='/settings')
+              span Settings
+          li
+            a(href='/documentation')
+              span Documentation
+          li
+            a(href='about')
+              span About
+          li(class='last')
+            a(href='/contact')
+              span Contact
+      block content
