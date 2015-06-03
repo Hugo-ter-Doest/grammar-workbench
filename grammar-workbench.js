@@ -464,6 +464,7 @@ function processSentence(req, res) {
     results.sentence = req.body.inputSentence;
     results.tokenizedSentence = settings.tokenizer.tokenize(results.sentence);
 
+    // This function is passed to the tagging function which is asynchronous
     function next() {
       postProcessTagging(results);
       parseSentence(results);

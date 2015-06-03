@@ -12,11 +12,11 @@ block content
          div.form-style-1
             label(for="tokenizerAlgorithm") Tokenizer algorithm
             select(id="tokenizerAlgorithm", name="tokenizerAlgorithm")
-              option(value="noChoice") Choose an algorithm
-              option(value="wordTokenizer") Word tokenizer
-              option(value="treebankWordTokenizer") Treebank word tokenizer
-              option(value="regexpTokenizer") Regular expression tokenizer
-              option(value="wordPunctTokenizer") Word punctuation tokenizer
+              option(value="noChoice", selected=settings.tokenizerAlgorithm === '') Choose an algorithm
+              option(value="wordTokenizer", selected=settings.tokenizerAlgorithm === 'wordTokenizer') Word tokenizer
+              option(value="treebankWordTokenizer", , selected=settings.tokenizerAlgorithm === 'treebankWordTokenizer') Treebank word tokenizer
+              option(value="regexpTokenizer", selected=settings.tokenizerAlgorithm === 'regexpTokenizer') Regular expression tokenizer
+              option(value="wordPunctTokenizer", selected=settings.tokenizerAlgorithm === 'wordPunctTokenizer') Word punctuation tokenizer
             label(for="regularExpression") Regular expression:
             input(type="text", id="regularExpression", name="regularExpression")
        li
@@ -47,11 +47,11 @@ block content
             label(for="taggingAlgorithm") Tagging algorithm
             fieldset
                 select(id="taggingAlgorithm", name="taggingAlgorithm")
-                  option(value="noChoice") Choose an algorithm
-                  option(value="fsPOSTagger") Feature Structure POS tagger
-                  option(value="simplePOSTagger") Simple POS tagger
-                  option(value="brillPOSTagger") Brill POS tagger
-                  option(value="wordnet") Wordnet
+                  option(value="noChoice", selected=settings.taggingAlgorithm === '') Choose an algorithm
+                  option(value="fsPOSTagger", selected=settings.taggingAlgorithm === 'fsPOSTagger') Feature Structure POS tagger
+                  option(value="simplePOSTagger", selected=settings.taggingAlgorithm === 'simplePOSTagger') Simple POS tagger
+                  option(value="brillPOSTagger", selected=settings.taggingAlgorithm === 'brillPOSTagger') Brill POS tagger
+                  option(value="wordnet", selected=settings.taggingAlgorithm === 'wordnet') Wordnet
                 label
                   input(type="checkbox", name="assignFunctionWordTags", checked=settings.assignFunctionWordTags)
                   = " Assign function word tags to words that could not be tagged"
@@ -79,12 +79,12 @@ block content
             label(for="parsingAlgorithm") Parsing algorithm
             fieldset
                 select(id="parsingAlgorithm", name="parsingAlgorithm")
-                  option(value="noChoice") Choose an algorithm
-                  option(value="CYK") Cocke Younger Kasami
-                  option(value="Earley") Earley
-                  option(value="LeftCorner") Left-Corner
-                  option(value="HeadCorner") Head-Corner
-                label(for="applyUnification")
+                  option(value="noChoice", selected=settings.parsingAlgorithm === '') Choose an algorithm
+                  option(value="CYK", selected=settings.parsingAlgorithm === 'CYK') Cocke Younger Kasami
+                  option(value="Earley", selected=settings.parsingAlgorithm === 'Earley') Earley
+                  option(value="LeftCorner", selected=settings.parsingAlgorithm === 'LeftCorner') Left-Corner
+                  option(value="HeadCorner", selected=settings.parsingAlgorithm === 'HeadCorner') Head-Corner
+                label(for="applyUnification", selected=settings.parsingAlgorithm === '')
                   input(type="checkbox", id="applyUnification", name="applyUnification", checked=settings.applyUnification)
                   = " Apply unification"
             label(for="currentGrammarFile") Current grammar
