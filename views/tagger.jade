@@ -1,0 +1,22 @@
+extends layout
+
+block content
+    div.form-style-1
+        form(method="post", action="/tag_sentence")
+          h2 Tag sentence
+          fieldset
+            ul
+              li
+                label Tagging Algorithm
+                input(type="text", value=settings.taggingAlgorithm, readonly)
+              li
+                label Lexicon file
+                input(type="text", value=settings.lexiconFile, readonly)
+              li
+                label Input sentence:
+                input(type="text", name="inputSentence", width="300px")
+          br
+          input(type='submit', name='Tag', value='Tag   ')
+          if results.taggedSentence
+            label Tagger output
+            textarea(value=results.taggedSentence, readonly)

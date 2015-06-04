@@ -47,6 +47,7 @@ var functionWordsBase = '/home/hugo/Workspace/simple-pos-tagger/';
 var functionWordsConfigFile = functionWordsBase + "data/English/lexicon_files.json";
 
 var settings = {};
+var results = {};
 
 var TYPE_LATTICE_FILE = 0;
 var LEXICON_FILE = 1;
@@ -190,10 +191,10 @@ function submitSettings(req, res) {
               GLOBAL.config.LIST_OF_CATEGORIES = true;
               break;
             default:
+              settings.taggingAlgorithm = 'fsPOSTagger';
               settings.tagger = lexiconParser.parse(settings.lexiconText,
                 {type_lattice: settings.typeLattice});
               GLOBAL.config.LIST_OF_CATEGORIES = false;
-              settings.tagger = lexicon;
           }
         }
 
@@ -215,7 +216,7 @@ function submitSettings(req, res) {
       default: 
         // Cancel
     }
-    res.redirect('input_sentence');
+    res.redirect('parser');
   });
 }
 
@@ -257,16 +258,16 @@ function tokenizeSentenceView(req, res) {
 }
 
 function taggerView(req, res) {
-  res.render('tagger');
+  res.render('tagger', {settings: settings, results: results});
 }
 
 function tagSentenceView(req, res) {
-
+  
 }
 
 // Page for entering a sentence
 function parserView(req, res) {
-  res.render('parser_input', {settings: settings});
+  res.render('parser', {settings: settings});
 }
 
 // Tag the sentence using Wordnet
@@ -301,7 +302,7 @@ function tagSentenceWithWordnet(taggedSentence, callback) {
 }
 
 // Adds function word tags to the already assigned tags
-function tagFunctionWords(results) {
+function tagFunctionWords() {
   var taggedSentence = results.taggedSentence;
   
   logger.debug("Enter tagFunctionWords( " + taggedSentence + ")");
@@ -334,7 +335,7 @@ function tagFunctionWords(results) {
 }
 
 // Remove words from taggedSentence that were not tagged
-function stripWordsNotInLexicon(results) {
+function stripWordsNotInLexicon() {
   var newTaggedSentence = [];
   settings.strippedTokens = [];
   results.taggedSentence.forEach(function(taggedWord) {
@@ -362,7 +363,7 @@ function listOfCategories(taggedWord) {
 
 // next is a callback and should be called after tagging has finished
 // Was added for the asynchronous calls to Wordnet.
-function tagSentence(results, next) {
+function tagSentence(next) {
   logger.debug('inside tagSentence');
   // Tag sentence
   switch (settings.taggingAlgorithm) {
@@ -403,7 +404,7 @@ function tagSentence(results, next) {
   }
 }
 
-function postProcessTagging(results) {
+function postProcessTagging() {
   // Add function words tags
   if (settings.assignFunctionWordTags) {
     results.taggedSentence = tagFunctionWords(results);
@@ -436,7 +437,7 @@ function postProcessTagging(results) {
   });
 }
 
-function parseSentence(results) {
+function parseSentence() {
   logger.debug('parseSentence: applyAppropriateFunction: ' + settings.applyAppropriateFunction);
 
   var parser = parserFactory.createParser({
@@ -472,7 +473,7 @@ function parseSentence(results) {
 }
 
 function processSentenceView(req, res) {
-  var results = {};
+  results = {};
 
   settings.stripWordsNotInLexicon = (req.body.stripWordsNotInLexicon === 'on');
   settings.applyAppropriateFunction = (req.body.applyAppropriateFunction === 'on');
@@ -486,14 +487,14 @@ function processSentenceView(req, res) {
 
     // This function is passed to the tagging function which is asynchronous
     function next() {
-      postProcessTagging(results);
-      parseSentence(results);
+      postProcessTagging();
+      parseSentence();
       // Present the results
       res.render('parser_output', {settings: settings, results: results});
     }
 
     logger.debug('passing next to the tagger');
-    tagSentence(results, next);
+    tagSentence(next);
   }
   else {
     res.render('edit_settings');
@@ -538,7 +539,7 @@ function contactView(req, res) {
   app.post('/tokenizeSentence', tokenizeSentenceView);
 
   app.get('/tagger', taggerView);
-  app.post('/tagSentence', tagSentenceView);
+  app.post('/tag_sentence', tagSentenceView);
   
   app.get('/parser', parserView);
   app.post('/parse_sentence', processSentenceView);
