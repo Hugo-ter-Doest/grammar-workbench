@@ -1,0 +1,28 @@
+extends layout
+
+block content
+  div.form-style-1
+    form(method="post", action="/tokenize_sentence")
+      h2 Tokenize sentence
+      fieldset
+        ul
+          li
+            label(for="tokenizerAlgorithm") Tokenizer algorithm
+            select(id="tokenizerAlgorithm", name="tokenizerAlgorithm")
+              option(value="noChoice", selected=settings.tokenizerAlgorithm === '') Choose an algorithm
+              option(value="wordTokenizer", selected=settings.tokenizerAlgorithm === 'wordTokenizer') Word tokenizer
+              option(value="treebankWordTokenizer", , selected=settings.tokenizerAlgorithm === 'treebankWordTokenizer') Treebank word tokenizer
+              option(value="regexpTokenizer", selected=settings.tokenizerAlgorithm === 'regexpTokenizer') Regular expression tokenizer
+              option(value="wordPunctTokenizer", selected=settings.tokenizerAlgorithm === 'wordPunctTokenizer') Word punctuation tokenizer
+          li
+            label Regular Expression
+            input(type="text", value=settings.regularExpression, readonly)
+          li
+            label Input sentence:
+            input(type="text", name="inputSentence", width="300px")
+      br
+      input(type='submit', name='Tag', value='Tag   ')
+      if results.tokenizedSentence
+        label Tagger output
+        textarea(cols="80", rows="1", readonly)
+          !{results.tokenizedSentence}

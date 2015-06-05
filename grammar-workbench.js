@@ -81,7 +81,7 @@ function initialise() {
 }
 
 function homeView(req, res) {
-
+  res.render('edit_settings', {settings: settings, results: results})
 }
 
 // Page for loading a grammar
@@ -243,18 +243,41 @@ function saveFile(req, res) {
         break;
       case 'Cancel':
         res.redirect('edit_settings');
-        break
+        break;
       default:
     }   
   });
 }
 
 function tokenizerView(req, res) {
-  res.render('tokenizer');
+  res.render('tokenizer', {settings: settings, results: results});
 }
 
 function tokenizeSentenceView(req, res) {
-
+  results.sentence = req.body.inputSentence;
+  // Process tokenizer settings
+  settings.tokenizerAlgorithm = req.body.tokenizerAlgorithm;
+  settings.regularExpression = req.body.regularExpression;
+  switch(settings.tokenizerAlgorithm) {
+    case "wordTokenizer":
+      settings.tokenizer = new natural.WordTokenizer();
+      break;
+    case "treebankWordTokenizer":
+      settings.tokenizer = new natural.TreebankWordTokenizer();
+      break;
+    case "regexpTokenizer":
+      settings.tokenizer = new natural.RegexpTokenizer(settings.regularExpression);
+      break;
+    case "wordPunctTokenizer":
+      settings.tokenizer = new natural.WordPunctTokenizer();
+      break;
+    default:
+      settings.tokenizer = new natural.WordTokenizer();
+      settings.tokenizerAlgorithm = "wordTokenizer";
+  }
+  // Tokenize sentence
+  results.tokenizedSentence = settings.tokenizer.tokenize(results.sentence);
+  res.render('tokenizer', {settings: settings, results: results});
 }
 
 function taggerView(req, res) {
@@ -262,12 +285,16 @@ function taggerView(req, res) {
 }
 
 function tagSentenceView(req, res) {
-  
+  results.sentence = req.body.inputSentence;
+  results.tokenizedSentence = settings.tokenizer.tokenize(results.sentence);
+  tagSentence(function() {
+    res.render('tagger', {settings: settings, results: results});
+  });
 }
 
 // Page for entering a sentence
 function parserView(req, res) {
-  res.render('parser', {settings: settings});
+  res.render('parser', {settings: settings, results: results});
 }
 
 // Tag the sentence using Wordnet
@@ -472,7 +499,7 @@ function parseSentence() {
   }
 }
 
-function processSentenceView(req, res) {
+function parseSentenceView(req, res) {
   results = {};
 
   settings.stripWordsNotInLexicon = (req.body.stripWordsNotInLexicon === 'on');
@@ -490,7 +517,7 @@ function processSentenceView(req, res) {
       postProcessTagging();
       parseSentence();
       // Present the results
-      res.render('parser_output', {settings: settings, results: results});
+      res.render('parser', {settings: settings, results: results});
     }
 
     logger.debug('passing next to the tagger');
@@ -505,12 +532,8 @@ function documentationView(req, res) {
 
 }
 
-function aboutView(req, res) {
-
-}
-
 function contactView(req, res) {
-
+  res.render('contact', {title: 'Contact information'});
 }
 
 (function main() {
@@ -525,6 +548,7 @@ function contactView(req, res) {
     extended: true
   }));
 
+  app.get('/', homeView);
   app.get('/home', homeView);
 
   app.get('/settings', settingsView);
@@ -536,16 +560,15 @@ function contactView(req, res) {
   app.post('/save_file', saveFile);
 
   app.get('/tokenizer', tokenizerView);
-  app.post('/tokenizeSentence', tokenizeSentenceView);
+  app.post('/tokenize_sentence', tokenizeSentenceView);
 
   app.get('/tagger', taggerView);
   app.post('/tag_sentence', tagSentenceView);
   
   app.get('/parser', parserView);
-  app.post('/parse_sentence', processSentenceView);
+  app.post('/parse_sentence', parseSentenceView);
 
   app.get('/documentation', documentationView);
-  app.get('/about', aboutView);
   app.get('/contact', contactView);
 
   server.listen(3000);
