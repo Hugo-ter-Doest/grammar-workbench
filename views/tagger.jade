@@ -2,22 +2,43 @@ extends layout
 
 block content
   div.form-style-1
-    form(method="post", action="/tag_sentence")
-      h2 Tag sentence
+    form(method="post")
+      h2 Tagger settings
+      label(for="taggingAlgorithm") Tagging algorithm
       fieldset
-        ul
-          li
-            label Tagging Algorithm
-            input(type="text", value=settings.taggingAlgorithm, readonly)
-          li
-            label Lexicon file
-            input(type="text", value=settings.lexiconFile, readonly)
-          li
-            label Input sentence:
-            input(type="text", name="inputSentence", width="300px")
+        select(id="taggingAlgorithm", name="taggingAlgorithm")
+          option(value="noChoice", selected=settings.taggingAlgorithm === '') Choose an algorithm
+          option(value="fsPOSTagger", selected=settings.taggingAlgorithm === 'fsPOSTagger') Feature Structure POS tagger
+          option(value="simplePOSTagger", selected=settings.taggingAlgorithm === 'simplePOSTagger') Simple POS tagger
+          option(value="brillPOSTagger", selected=settings.taggingAlgorithm === 'brillPOSTagger') Brill POS tagger
+          option(value="wordnet", selected=settings.taggingAlgorithm === 'wordnet') Wordnet
+        label
+          input(type="checkbox", name="assignFunctionWordTags", checked=settings.assignFunctionWordTags)
+          = " Assign function word tags to words that could not be tagged"
+        label
+          input(type="checkbox", name="stripWordsNotInLexicon", checked=settings.stripWordsNotInLexicon)
+          = " Strip words that could not be tagged"
+      label(for="currentLexiconFile") Lexicon
+      fieldset
+        label(for="currentLexiconFile") Current lexicon
+        if (settings.lexiconFile)
+          input(type="text", id="currentLexiconFile", value=settings.lexiconFile, readonly)
+        else
+          input(type="text", id="currentLexiconFile", value="no file selected", readonly)
+        label
+          input(type="checkbox", checked=settings.lexiconHasFeatureStructures, disabled)
+          = " Has feature structures"
+        label(for="lexiconFile") Select lexicon
+        input(type="file", id="lexiconFile", name="lexiconFile")
+        input(type='submit', name='editLexicon', value='Edit lexicon')
       br
-      input(type='submit', name='Tag', value='Tag   ')
+      input(type='submit', name='saveTaggerSettings', value='Save settings', formaction="/save_tagger_settings", formenctype="multipart/form-data")
+      h2 Input sentence
+      fieldset
+        input(type="text", name="inputSentence", value=results.sentence, width="300px")
+      br
+      input(type='submit', name='tagSentence', value='Tag sentence', formaction="/tag_sentence")
       if results.taggedSentence
-        label Tagger output
+        h2 Tagger output
         textarea(cols="80", rows="20", readonly)
           !{results.taggedSentencePrettyPrint}

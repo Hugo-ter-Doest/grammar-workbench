@@ -81,12 +81,12 @@ function initialise() {
 }
 
 function homeView(req, res) {
-  res.render('edit_settings', {settings: settings, results: results})
+  res.render('settings', {settings: settings, results: results})
 }
 
 // Page for loading a grammar
 function settingsView(req, res) {
-  res.render('edit_settings', {settings: settings});
+  res.render('settings', {settings: settings});
 }
 
 function submitSettings(req, res) {
@@ -242,7 +242,7 @@ function saveFile(req, res) {
         // Set the file server side, add to a library?
         break;
       case 'Cancel':
-        res.redirect('edit_settings');
+        res.redirect('settings');
         break;
       default:
     }   
@@ -284,12 +284,64 @@ function taggerView(req, res) {
   res.render('tagger', {settings: settings, results: results});
 }
 
-function tagSentenceView(req, res) {
-  results.sentence = req.body.inputSentence;
-  results.tokenizedSentence = settings.tokenizer.tokenize(results.sentence);
-  tagSentence(function() {
+function saveTaggerSettings(req, res) {
+  var form = new formidable.IncomingForm();
+  form.parse(req, function (err, fields, files) {
+    settings.taggingAlgorithm = fields.taggingAlgorithm;
+    settings.stripWordsNotInLexicon = (fields.stripWordsNotInLexicon === 'on');
+    settings.assignFunctionWordTags = (fields.assignFunctionWordTags === 'on');
+    if (files.lexiconFile) {
+      settings.lexiconFile = files.lexiconFile.name;
+      settings.lexiconText = fs.readFileSync(files.lexiconFile.path, 'utf8');
+      switch (settings.taggingAlgorithm) {
+        case "fsPOSTagger":
+          if (settings.typeLattice) {
+            settings.tagger = lexiconParser.parse(settings.lexiconText,
+              {type_lattice: settings.typeLattice});
+            GLOBAL.config.LIST_OF_CATEGORIES = false;
+            settings.lexiconHasFeatureStructures = true;
+            logger.debug("submitSettings: created an FS POS Tagger");
+          }
+          break;
+        case "simplePOSTagger":
+          settings.tagger = new simplePOSTagger(files.lexiconFile.path, false);
+          logger.debug("submitSettings: created a Simple POS Tagger");
+          // Assigns a list of lexical categories
+          GLOBAL.config.LIST_OF_CATEGORIES = true;
+          logger.debug("submitSettings: GLOBAL.config.LIST_OF_CATEGORIES: " + GLOBAL.config.LIST_OF_CATEGORIES);
+          break;
+        case "brillPOSTagger":
+          // Assigns a list of lexical categories based on Brill's transformation rules
+          GLOBAL.config.LIST_OF_CATEGORIES = true;
+          break;
+        case "Wordnet":
+          settings.tagger = tagSentenceWithWordnet;
+          GLOBAL.config.LIST_OF_CATEGORIES = true;
+          break;
+        default:
+          settings.taggingAlgorithm = 'fsPOSTagger';
+          settings.tagger = lexiconParser.parse(settings.lexiconText,
+            {type_lattice: settings.typeLattice});
+          GLOBAL.config.LIST_OF_CATEGORIES = false;
+          settings.lexiconHasFeatureStructures = true;
+      }
+    }
     res.render('tagger', {settings: settings, results: results});
   });
+}
+
+function tagSentenceView(req, res) {
+  if (settings.tokenizer && settings.tagger) {
+    results.sentence = req.body.inputSentence;
+    logger.debug('tagSentenceView: ' + results.sentence);
+    results.tokenizedSentence = settings.tokenizer.tokenize(results.sentence);
+    tagSentence(function () {
+      res.render('tagger', {settings: settings, results: results});
+    });
+  }
+  else {
+    logger.debug('tagSentenceView: could not tag sentence');
+  }
 }
 
 // Page for entering a sentence
@@ -395,6 +447,7 @@ function tagSentence(next) {
   // Tag sentence
   switch (settings.taggingAlgorithm) {
     case "fsPOSTagger":
+      // Assigns a list of feature structures
       results.taggedSentence = settings.tagger.tagSentence(results.tokenizedSentence);
       results.taggedSentencePrettyPrint = '';
       results.taggedSentence.forEach(function(taggedWord) {
@@ -421,6 +474,7 @@ function tagSentence(next) {
       next();
       break;
     case "Wordnet":
+      // Assigns a list of lexical categories
       settings.tagger(tagged_sentence, function(tagged_sentence) {
         results.taggedSentence = tagged_sentence;
         next();
@@ -524,7 +578,7 @@ function parseSentenceView(req, res) {
     tagSentence(next);
   }
   else {
-    res.render('edit_settings');
+    res.render('settings');
   }
 }
 
@@ -564,7 +618,8 @@ function contactView(req, res) {
 
   app.get('/tagger', taggerView);
   app.post('/tag_sentence', tagSentenceView);
-  
+  app.post('/save_tagger_settings', saveTaggerSettings);
+
   app.get('/parser', parserView);
   app.post('/parse_sentence', parseSentenceView);
 

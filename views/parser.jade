@@ -2,34 +2,49 @@ extends layout
 
 block content
   div.form-style-1
-    form( method="post", action="/parse_sentence")
-      h2 Parse sentence
+    form( method="post")
+      h2 Parser settings
+      label Parsing algorithm
       fieldset
-        ul
-          li
-            select(id="parsingAlgorithm", name="parsingAlgorithm")
-              option(value="noChoice", selected=settings.parsingAlgorithm === '') Choose an algorithm
-              option(value="CYK", selected=settings.parsingAlgorithm === 'CYK') CYK
-              option(value="Earley", selected=settings.parsingAlgorithm === 'Earley') Earley
-              option(value="LeftCorner", selected=settings.parsingAlgorithm === 'LeftCorner') Left-Corner
-              option(value="HeadCorner", selected=settings.parsingAlgorithm === 'HeadCorner') Head-Corner
-          li
-            label
-              input(type="checkbox", name="applyAppropriateFunction", checked=settings.applyAppropriateFunction)
-              = " Apply appropriate function"
-          li
-            label
-              input(type="checkbox", name="stripWordsNotInLexicon", checked=settings.stripWordsNotInLexicon)
-              = " Strip words that could not be tagged"
-          li
-            label
-              input(type="checkbox", name="applyUnification", checked=settings.applyUnification)
-              = " Apply unification"
-          li
-            label Input sentence:
-            input(type="text", name="inputSentence", width="300px")
+        select(id="parsingAlgorithm", name="parsingAlgorithm")
+          option(value="noChoice", selected=settings.parsingAlgorithm === '') Choose an algorithm
+          option(value="CYK", selected=settings.parsingAlgorithm === 'CYK') CYK
+          option(value="Earley", selected=settings.parsingAlgorithm === 'Earley') Earley
+          option(value="LeftCorner", selected=settings.parsingAlgorithm === 'LeftCorner') Left-Corner
+          option(value="HeadCorner", selected=settings.parsingAlgorithm === 'HeadCorner') Head-Corner
+          label
+            input(type="checkbox", name="applyAppropriateFunction", checked=settings.applyAppropriateFunction)
+            = " Apply appropriate function"
+          label
+            input(type="checkbox", name="stripWordsNotInLexicon", checked=settings.stripWordsNotInLexicon)
+            = " Strip words that could not be tagged"
+          label
+            input(type="checkbox", name="applyUnification", checked=settings.applyUnification)
+            = " Apply unification"
+          label Input sentence:
+          input(type="text", name="inputSentence", width="300px")
+      label(for="currentGrammarFile") Grammar
+      fieldset(for="currentGrammarFile")
+        if settings.grammarFile
+          input(type="text", value="#{settings.grammarFile}", readonly)
+        else
+          input(type="text", id="currentGrammarFile", value="no file selected", readonly)
+        label
+          input(type="checkbox", checked=settings.grammarIsInCNF, disabled)
+          = " Is in Chomsky Normal Form"
+        label
+          input(type="checkbox", checked=settings.grammarHasUnificationConstraints, disabled)
+          = " Has unification constraints"
+        label(for="grammarFile") Select grammar
+        input(type="file", id="grammarFile", name="grammarFile")
+        input(type='submit', name='submit_settings', value='Edit grammar')
       br
-      input(type='submit', name='Parse', value='Parse')
+      input(type='submit', name='saveParserSettings', value='Save settings', formaction="save_parser_settings", formenctype="multipart/form-data")
+      h2 Input sentence
+      fieldset
+        input(type="text", name="inputSentence", value=results.sentence, width="300px")
+      br
+      input(type='submit', name='Parse', value='Parse sentence', formaction = "parse_sentence")
       if results.chart
         script(language="javascript" type="text/javascript" src="Jit/jit-yc.js")
         script(language="javascript" type="text/javascript" src="javascript/parse_trees.js")

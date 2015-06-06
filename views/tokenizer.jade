@@ -3,7 +3,7 @@ extends layout
 block content
   div.form-style-1
     form(method="post", action="/tokenize_sentence")
-      h2 Tokenize sentence
+      h2 Tokenizer settings
       fieldset
         ul
           li
@@ -17,12 +17,12 @@ block content
           li
             label Regular Expression
             input(type="text", value=settings.regularExpression, readonly)
-          li
-            label Input sentence:
-            input(type="text", name="inputSentence", width="300px")
+      h2 Input sentence
+      fieldset
+        input(type="text", name="inputSentence", width="300px")
       br
-      input(type='submit', name='Tag', value='Tag   ')
+      input(type='submit', name='Tokenize', value='Tokenize')
       if results.tokenizedSentence
-        label Tagger output
-        textarea(cols="80", rows="1", readonly)
-          !{results.tokenizedSentence}
+        h2 Tokenizer output
+        textarea(cols="80", rows="20", readonly)
+          !{JSON.stringify(results.tokenizedSentence, null, 2)}
