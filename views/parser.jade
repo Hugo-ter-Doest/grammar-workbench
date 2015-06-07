@@ -12,17 +12,9 @@ block content
           option(value="Earley", selected=settings.parsingAlgorithm === 'Earley') Earley
           option(value="LeftCorner", selected=settings.parsingAlgorithm === 'LeftCorner') Left-Corner
           option(value="HeadCorner", selected=settings.parsingAlgorithm === 'HeadCorner') Head-Corner
-          label
-            input(type="checkbox", name="applyAppropriateFunction", checked=settings.applyAppropriateFunction)
-            = " Apply appropriate function"
-          label
-            input(type="checkbox", name="stripWordsNotInLexicon", checked=settings.stripWordsNotInLexicon)
-            = " Strip words that could not be tagged"
-          label
-            input(type="checkbox", name="applyUnification", checked=settings.applyUnification)
-            = " Apply unification"
-          label Input sentence:
-          input(type="text", name="inputSentence", width="300px")
+        label
+          input(type="checkbox", name="applyUnification", checked=settings.applyUnification)
+          = " Apply unification"
       label(for="currentGrammarFile") Grammar
       fieldset(for="currentGrammarFile")
         if settings.grammarFile
@@ -39,7 +31,8 @@ block content
         input(type="file", id="grammarFile", name="grammarFile")
         input(type='submit', name='submit_settings', value='Edit grammar')
       br
-      input(type='submit', name='saveParserSettings', value='Save settings', formaction="save_parser_settings", formenctype="multipart/form-data")
+      input(type='submit', name='saveParserSettings', value='Apply settings', formaction="save_parser_settings",
+      formenctype="multipart/form-data")
       h2 Input sentence
       fieldset
         input(type="text", name="inputSentence", value=results.sentence, width="300px")

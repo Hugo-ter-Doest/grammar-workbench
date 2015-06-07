@@ -14,7 +14,7 @@ block content
           option(value="wordnet", selected=settings.taggingAlgorithm === 'wordnet') Wordnet
         label
           input(type="checkbox", name="assignFunctionWordTags", checked=settings.assignFunctionWordTags)
-          = " Assign function word tags to words that could not be tagged"
+          = " Assign function word tags"
         label
           input(type="checkbox", name="stripWordsNotInLexicon", checked=settings.stripWordsNotInLexicon)
           = " Strip words that could not be tagged"
@@ -32,10 +32,11 @@ block content
         input(type="file", id="lexiconFile", name="lexiconFile")
         input(type='submit', name='editLexicon', value='Edit lexicon')
       br
-      input(type='submit', name='saveTaggerSettings', value='Save settings', formaction="/save_tagger_settings", formenctype="multipart/form-data")
+      input(type='submit', name='saveTaggerSettings', value='Apply settings', formaction="/save_tagger_settings",
+      formenctype="multipart/form-data")
       h2 Input sentence
       fieldset
-        input(type="text", name="inputSentence", value=results.sentence, width="300px")
+        input(type="text", name="inputSentence", value=results.sentence)
       br
       input(type='submit', name='tagSentence', value='Tag sentence', formaction="/tag_sentence")
       if results.taggedSentence

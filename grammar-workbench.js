@@ -84,7 +84,6 @@ function homeView(req, res) {
   res.render('settings', {settings: settings, results: results})
 }
 
-// Page for loading a grammar
 function settingsView(req, res) {
   res.render('settings', {settings: settings});
 }
@@ -126,7 +125,7 @@ function submitSettings(req, res) {
           });
         }
         break;
-      case 'Save':
+      case 'Apply':
         // Process tokenizer settings
         settings.tokenizerAlgorithm = fields.tokenizerAlgorithm;
         settings.regularExpression = fields.regularExpression;
@@ -213,10 +212,59 @@ function submitSettings(req, res) {
             logger.debug("submitSettings: grammar is in CNF: " + settings.grammarIsInCNF);
           }
         }
+        break;
       default: 
         // Cancel
     }
-    res.redirect('parser');
+    res.render('settings', {settings: settings, results: results})
+  });
+}
+
+function uploadSettingsView(req, res) {
+  res.render('upload_settings', {settings: settings});
+}
+
+function uploadSettings(req, res) {
+  var form = new formidable.IncomingForm();
+  form.parse(req, function (err, fields, files) {
+    if (files.settingsFile) {
+      var data = fs.readFileSync(files.settingsFile.path, 'utf8');
+      settings = JSON.parse(data);
+      settings.settingsFile = files.settingsFile.name;
+    }
+    res.render('settings', {settings: settings, results: results})
+  });
+}
+
+function downloadSettingsView(req, res) {
+  res.attachment('settings.json');
+  res.end(JSON.stringify(settings, null, 2), 'utf8');
+}
+
+function typeLatticeView(req, res) {
+  res.render('type_lattice', {settings: settings, results: results});
+}
+
+function showType(req, res) {
+  var type = settings.typeLattice.get_type_by_name(req.body.typeToShow);
+  results.typePrettyPrint = type.prettyPrint();
+  res.render('type_lattice', {settings: settings, results: results});
+}
+
+// Process type lattice settings
+function saveTypeLatticeSettings(req, res) {
+  var form = new formidable.IncomingForm();
+  form.parse(req, function (err, fields, files) {
+    settings.applyAppropriateFunction = (fields.applyAppropriateFunction === 'on');
+    if (files.typeLatticeFile.name) {
+      settings.typeLatticeFile = files.typeLatticeFile.name;
+      settings.typeLatticeText = fs.readFileSync(files.typeLatticeFile.path, 'utf8');
+      settings.typeLattice = typeLatticeParser.parse(settings.typeLatticeText);
+      logger.debug("submitSettings: created a new type lattice");
+      settings.typeLatticeHasAppropriateFunction =
+        (settings.typeLattice.appropriate_function !== null);
+    }
+    res.render('type_lattice', {settings: settings, results: results});
   });
 }
 
@@ -249,13 +297,8 @@ function saveFile(req, res) {
   });
 }
 
-function tokenizerView(req, res) {
-  res.render('tokenizer', {settings: settings, results: results});
-}
-
-function tokenizeSentenceView(req, res) {
-  results.sentence = req.body.inputSentence;
-  // Process tokenizer settings
+// Process tokenizer settings
+function saveTokenizerSettings(req, res) {
   settings.tokenizerAlgorithm = req.body.tokenizerAlgorithm;
   settings.regularExpression = req.body.regularExpression;
   switch(settings.tokenizerAlgorithm) {
@@ -275,6 +318,15 @@ function tokenizeSentenceView(req, res) {
       settings.tokenizer = new natural.WordTokenizer();
       settings.tokenizerAlgorithm = "wordTokenizer";
   }
+  res.render('tokenizer', {settings: settings, results: results});
+}
+
+function tokenizerView(req, res) {
+  res.render('tokenizer', {settings: settings, results: results});
+}
+
+function tokenizeSentenceView(req, res) {
+  results.sentence = req.body.inputSentence;
   // Tokenize sentence
   results.tokenizedSentence = settings.tokenizer.tokenize(results.sentence);
   res.render('tokenizer', {settings: settings, results: results});
@@ -300,15 +352,15 @@ function saveTaggerSettings(req, res) {
               {type_lattice: settings.typeLattice});
             GLOBAL.config.LIST_OF_CATEGORIES = false;
             settings.lexiconHasFeatureStructures = true;
-            logger.debug("submitSettings: created an FS POS Tagger");
+            logger.debug("saveTaggerSettings: created an FS POS Tagger");
           }
           break;
         case "simplePOSTagger":
           settings.tagger = new simplePOSTagger(files.lexiconFile.path, false);
-          logger.debug("submitSettings: created a Simple POS Tagger");
+          logger.debug("saveTaggerSettings: created a Simple POS Tagger");
           // Assigns a list of lexical categories
           GLOBAL.config.LIST_OF_CATEGORIES = true;
-          logger.debug("submitSettings: GLOBAL.config.LIST_OF_CATEGORIES: " + GLOBAL.config.LIST_OF_CATEGORIES);
+          logger.debug("saveTaggerSettings: GLOBAL.config.LIST_OF_CATEGORIES: " + GLOBAL.config.LIST_OF_CATEGORIES);
           break;
         case "brillPOSTagger":
           // Assigns a list of lexical categories based on Brill's transformation rules
@@ -380,12 +432,33 @@ function tagSentenceWithWordnet(taggedSentence, callback) {
   });
 }
 
+function saveParserSettings(req, res) {
+  var form = new formidable.IncomingForm();
+  form.parse(req, function (err, fields, files) {
+    settings.applyUnification = (fields.applyUnification === 'on');
+    settings.parsingAlgorithm = fields.parsingAlgorithm;
+    if (files.grammarFile.name) {
+      settings.grammarFile = files.grammarFile.name;
+      settings.grammarText = fs.readFileSync(files.grammarFile.path, 'utf8');
+      if (settings.typeLattice) {
+        settings.grammar = grammarParser.parse(settings.grammarText,
+          {type_lattice: settings.typeLattice});
+        logger.debug("saveParserSettings: created a new grammar");
+        settings.grammarHasUnificationConstraints = settings.grammar.hasUnificationConstraints;
+        settings.grammarIsInCNF = settings.grammar.is_CNF;
+        logger.debug("saveParserSettings: grammar is in CNF: " + settings.grammarIsInCNF);
+      }
+    }
+    res.render('parser', {settings: settings, results: results});
+  });
+}
+
 // Adds function word tags to the already assigned tags
 function tagFunctionWords() {
   var taggedSentence = results.taggedSentence;
   
   logger.debug("Enter tagFunctionWords( " + taggedSentence + ")");
-  tagger = new simplePOSTagger(functionWordsConfigFile);
+  var tagger = new simplePOSTagger(functionWordsConfigFile);
   taggedSentence.forEach(function(taggedWord) {
     var functionWordTags = tagger.tag_word(taggedWord[0]);
     logger.debug("tagFunctionWords: function word tags: " + functionWordTags);
@@ -428,16 +501,6 @@ function stripWordsNotInLexicon() {
     }
   });
   return(newTaggedSentence);
-}
-
-function listOfCategories(taggedWord) {
-  var list = "";
-  taggedWord.forEach(function(tag, index) {
-    if (index) { // 0-th index is the word itself
-      list += tag.features.category.type.name + ' ';
-    }
-  });
-  return(list);
 }
 
 // next is a callback and should be called after tagging has finished
@@ -500,7 +563,7 @@ function postProcessTagging() {
   // Prepare a comma separated list of categories for pretty printing the chart
   results.taggedSentenceCategories = [];
   results.taggedSentence.forEach(function(taggedWord, i) {
-    str = '';
+    var str = '';
     taggedWord.forEach(function(tag, j) {
       if (j) { // 0-th index is the word itself
         if (GLOBAL.config.LIST_OF_CATEGORIES) {
@@ -561,7 +624,7 @@ function parseSentenceView(req, res) {
   settings.parsingAlgorithm = req.body.parsingAlgorithm;
   settings.applyUnification = (req.body.applyUnification === 'on');
 
-  if (settings.tagger && settings.grammar && settings.typeLattice) {
+  if (settings.tokenizer && settings.tagger && settings.grammar && settings.typeLattice) {
     // Tokenize sentence
     results.sentence = req.body.inputSentence;
     results.tokenizedSentence = settings.tokenizer.tokenize(results.sentence);
@@ -606,7 +669,11 @@ function contactView(req, res) {
   app.get('/home', homeView);
 
   app.get('/settings', settingsView);
+  app.get('/upload_settings', uploadSettingsView);
+  app.post('/upload_settings', uploadSettings);
+  app.get('/download_settings', downloadSettingsView);
   app.post('/submit_settings', submitSettings);
+
   
   app.get('/edit_grammar', editGrammarView);
   app.get('/edit_lexicon', editLexiconView);
@@ -614,13 +681,19 @@ function contactView(req, res) {
   app.post('/save_file', saveFile);
 
   app.get('/tokenizer', tokenizerView);
+  app.post('/save_tokenizer_settings', saveTokenizerSettings);
   app.post('/tokenize_sentence', tokenizeSentenceView);
+
+  app.get('/type_lattice', typeLatticeView);
+  app.post('/show_type', showType);
+  app.post('/save_type_lattice_settings', saveTypeLatticeSettings);
 
   app.get('/tagger', taggerView);
   app.post('/tag_sentence', tagSentenceView);
   app.post('/save_tagger_settings', saveTaggerSettings);
 
   app.get('/parser', parserView);
+  app.post('/save_parser_settings', saveParserSettings);
   app.post('/parse_sentence', parseSentenceView);
 
   app.get('/documentation', documentationView);

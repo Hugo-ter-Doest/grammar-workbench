@@ -6,21 +6,31 @@ html
   body
       div.align-center(id='cssmenu')
         ul
-          li(class='active')
+          li(class='active has-sub')
             a(href='/home')
               span Home
+            ul
+              li
+                a(href='/settings')
+                  span Edit settings
+              li
+                a(href='/upload_settings')
+                  span Load settings
+              li
+                a(href='/download_settings')
+                  span Save settings
           li
             a(href='/tokenizer')
               span Tokenizer
+          li
+            a(href='/type_lattice')
+              span Type lattice
           li
             a(href='/tagger')
               span Tagger
           li
             a(href='/parser')
               span Parser
-          li
-            a(href='/settings')
-              span Settings
           li
             a(href='/documentation')
               span Documentation

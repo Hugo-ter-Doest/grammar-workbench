@@ -2,26 +2,26 @@ extends layout
 
 block content
   div.form-style-1
-    form(method="post", action="/tokenize_sentence")
+    form(method="post")
       h2 Tokenizer settings
       fieldset
-        ul
-          li
-            label(for="tokenizerAlgorithm") Tokenizer algorithm
-            select(id="tokenizerAlgorithm", name="tokenizerAlgorithm")
-              option(value="noChoice", selected=settings.tokenizerAlgorithm === '') Choose an algorithm
-              option(value="wordTokenizer", selected=settings.tokenizerAlgorithm === 'wordTokenizer') Word tokenizer
-              option(value="treebankWordTokenizer", , selected=settings.tokenizerAlgorithm === 'treebankWordTokenizer') Treebank word tokenizer
-              option(value="regexpTokenizer", selected=settings.tokenizerAlgorithm === 'regexpTokenizer') Regular expression tokenizer
-              option(value="wordPunctTokenizer", selected=settings.tokenizerAlgorithm === 'wordPunctTokenizer') Word punctuation tokenizer
-          li
-            label Regular Expression
-            input(type="text", value=settings.regularExpression, readonly)
+        label(for="tokenizerAlgorithm") Tokenizer algorithm
+        select(id="tokenizerAlgorithm", name="tokenizerAlgorithm")
+          option(value="noChoice", selected=settings.tokenizerAlgorithm === '') Choose an algorithm
+          option(value="wordTokenizer", selected=settings.tokenizerAlgorithm === 'wordTokenizer') Word tokenizer
+          option(value="treebankWordTokenizer", , selected=settings.tokenizerAlgorithm === 'treebankWordTokenizer') Treebank word tokenizer
+          option(value="regexpTokenizer", selected=settings.tokenizerAlgorithm === 'regexpTokenizer') Regular expression tokenizer
+          option(value="wordPunctTokenizer", selected=settings.tokenizerAlgorithm === 'wordPunctTokenizer') Word punctuation tokenizer
+        label Regular Expression
+        input(type="text", value=settings.regularExpression, readonly)
+      br
+      input(type='submit', name='saveTokenizerSettings', value='Apply settings', formaction="/save_tokenizer_settings",
+      formenctype="multipart/form-data")
       h2 Input sentence
       fieldset
-        input(type="text", name="inputSentence", width="300px")
+        input(type="text", name="inputSentence", width="400px")
       br
-      input(type='submit', name='Tokenize', value='Tokenize')
+      input(type='submit', name='Tokenize', value='Tokenize', formaction="/tokenize_sentence")
       if results.tokenizedSentence
         h2 Tokenizer output
         textarea(cols="80", rows="20", readonly)

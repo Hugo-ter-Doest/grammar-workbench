@@ -1,0 +1,16 @@
+extends layout
+block content
+  div.form-style-1
+    form(method="post")
+      h2 Load settings
+      fieldset
+        label(for="settingsFile") Settings file
+        input(type="file", name="settingsFile", value=settings.settingsFile)
+      br
+      input(type='submit', name='uploadSettings', value='Upload settings', formaction="/upload_settings",
+      formenctype="multipart/form-data")
+      h2 Input sentence
+      fieldset
+        input(type="text", name="inputSentence", width="400px")
+      br
+      input(type='submit', name='Tokenize', value='Tokenize', formaction="/tokenize_sentence", formenctype="multipart/form-data")
