@@ -32,6 +32,11 @@ var server = require('http').Server(app);
 var bodyParser = require('body-parser');
 var formidable = require('formidable');
 
+var workspace = '/home/hugo/Workspace/';
+var documentationChartParsers = workspace + 'grammar-workbench/README.md';
+var md = require('marked');
+
+
 // Chart parser factory
 var chartParsers = require('../chart-parsers');
 var typeLatticeParser = chartParsers.TypeLatticeParser;
@@ -646,7 +651,8 @@ function parseSentenceView(req, res) {
 }
 
 function documentationView(req, res) {
-
+  var doc = fs.readFileSync(documentationChartParsers, 'utf8');
+  res.render('documentation', { md: md, documentation: doc });
 }
 
 function contactView(req, res) {
