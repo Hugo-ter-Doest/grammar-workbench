@@ -24,11 +24,11 @@ block content
       fieldset
         input(type="text", name="typeToShow", value=results.type)
       br
-      input(type='submit', name='typeToShow', value='Show type', formaction="/show_type")
+      input(type='submit', name='inputTypeToShow', value='Show type', formaction="/show_type")
       if results.typePrettyPrint
         h2 Type properties
         textarea(cols="80", rows="20", readonly)
           !{results.typePrettyPrint}
       h2 Type lattice
-      textarea(cols="80", rows="40", readonly)
-        !{results.typeLatticePrettyPrint}
+      textarea(cols="120", rows="40", readonly)
+        !{settings.typeLatticePrettyPrint}

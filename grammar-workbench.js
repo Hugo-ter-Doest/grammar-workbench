@@ -95,6 +95,80 @@ function settingsView(req, res) {
   res.render('settings', {settings: settings});
 }
 
+function createTokenizer() {
+  switch(settings.tokenizerAlgorithm) {
+    case "wordTokenizer":
+      settings.tokenizer = new natural.WordTokenizer();
+      break;
+    case "treebankWordTokenizer":
+      settings.tokenizer = new natural.TreebankWordTokenizer();
+      break;
+    case "regexpTokenizer":
+      settings.tokenizer = new natural.RegexpTokenizer(settings.regularExpression);
+      break;
+    case "wordPunctTokenizer":
+      settings.tokenizer = new natural.WordPunctTokenizer();
+      break;
+    default:
+      settings.tokenizer = new natural.WordTokenizer();
+      settings.tokenizerAlgorithm = "wordTokenizer";
+  }
+}
+
+function createTypeLattice() {
+  settings.typeLattice = typeLatticeParser.parse(settings.typeLatticeText);
+  settings.typeLatticePrettyPrint = settings.typeLattice.pretty_print();
+  settings.typeLatticeHasAppropriateFunction =
+    (settings.typeLattice.appropriate_function !== null);
+  logger.debug("createTypeLattice: created a new type lattice");
+}
+
+function createTagger(file) {
+  switch (settings.taggingAlgorithm) {
+    case "fsPOSTagger":
+      if (settings.typeLattice) {
+        settings.tagger = lexiconParser.parse(settings.lexiconText,
+          {type_lattice: settings.typeLattice});
+        GLOBAL.config.LIST_OF_CATEGORIES = false;
+        settings.lexiconHasFeatureStructures = true;
+      }
+      break;
+    case "simplePOSTagger":
+      // Assigns a list of lexical categories
+      settings.tagger = new simplePOSTagger(file, false);
+      logger.debug("submitSettings: created a Simple POS Tagger");
+      GLOBAL.config.LIST_OF_CATEGORIES = true;
+      logger.debug("submitSettings: GLOBAL.config.LIST_OF_CATEGORIES: " + GLOBAL.config.LIST_OF_CATEGORIES);
+      break;
+    case "brillPOSTagger":
+      // Assigns a list of lexical categories based on Brill's transformation rules
+      GLOBAL.config.LIST_OF_CATEGORIES = true;
+      break;
+    case "Wordnet":
+      settings.tagger = tagSentenceWithWordnet;
+      GLOBAL.config.LIST_OF_CATEGORIES = true;
+      break;
+    default:
+      settings.taggingAlgorithm = 'fsPOSTagger';
+      settings.tagger = lexiconParser.parse(settings.lexiconText,
+        {type_lattice: settings.typeLattice});
+      GLOBAL.config.LIST_OF_CATEGORIES = false;
+      settings.lexiconHasFeatureStructures = true;
+  }
+}
+
+
+function createParser() {
+  if (settings.typeLattice) {
+    settings.grammar = grammarParser.parse(settings.grammarText,
+      {type_lattice: settings.typeLattice});
+    logger.debug("createParser: created a new grammar");
+    settings.grammarHasUnificationConstraints = settings.grammar.hasUnificationConstraints;
+    settings.grammarIsInCNF = settings.grammar.is_CNF;
+    logger.debug("createParser: grammar is in CNF: " + settings.grammarIsInCNF);
+  }
+}
+
 function submitSettings(req, res) {
   var form = new formidable.IncomingForm();
   form.parse(req, function(err, fields, files) {
@@ -136,33 +210,14 @@ function submitSettings(req, res) {
         // Process tokenizer settings
         settings.tokenizerAlgorithm = fields.tokenizerAlgorithm;
         settings.regularExpression = fields.regularExpression;
-        switch(settings.tokenizerAlgorithm) {
-          case "wordTokenizer":
-            settings.tokenizer = new natural.WordTokenizer();
-            break;
-          case "treebankWordTokenizer":
-            settings.tokenizer = new natural.TreebankWordTokenizer();
-            break;
-          case "regexpTokenizer":
-            settings.tokenizer = new natural.RegexpTokenizer(settings.regularExpression);
-            break;
-          case "wordPunctTokenizer":
-            settings.tokenizer = new natural.WordPunctTokenizer();
-            break;
-          default:
-            settings.tokenizer = new natural.WordTokenizer();
-            settings.tokenizerAlgorithm = "wordTokenizer";
-        }
-        
+        createTokenizer();
+
         // Process type lattice settings
         settings.applyAppropriateFunction = (fields.applyAppropriateFunction === 'on');
         if (files.typeLatticeFile.name) {
           settings.typeLatticeFile = files.typeLatticeFile.name;
           settings.typeLatticeText = fs.readFileSync(files.typeLatticeFile.path, 'utf8');
-          settings.typeLattice = typeLatticeParser.parse(settings.typeLatticeText);
-          logger.debug("submitSettings: created a new type lattice");
-          settings.typeLatticeHasAppropriateFunction = 
-            (settings.typeLattice.appropriate_function !== null);
+          createTypeLattice();
         }
 
         // Process tagger settings
@@ -172,36 +227,7 @@ function submitSettings(req, res) {
         if (files.lexiconFile.name) {
           settings.lexiconFile = files.lexiconFile.name;
           settings.lexiconText = fs.readFileSync(files.lexiconFile.path, 'utf8');
-          switch (settings.taggingAlgorithm) {
-            case "fsPOSTagger":
-              if (settings.typeLattice) {
-                settings.tagger = lexiconParser.parse(settings.lexiconText, 
-                  {type_lattice: settings.typeLattice});
-                GLOBAL.config.LIST_OF_CATEGORIES = false;
-                settings.lexiconHasFeatureStructures = true;
-              }
-              break;
-            case "simplePOSTagger":
-              // Assigns a list of lexical categories
-              settings.tagger = new simplePOSTagger(files.lexiconFile.path, false);
-              logger.debug("submitSettings: created a Simple POS Tagger");
-              GLOBAL.config.LIST_OF_CATEGORIES = true;
-              logger.debug("submitSettings: GLOBAL.config.LIST_OF_CATEGORIES: " + GLOBAL.config.LIST_OF_CATEGORIES);
-              break;
-            case "brillPOSTagger":
-              // Assigns a list of lexical categories based on Brill's transformation rules
-              GLOBAL.config.LIST_OF_CATEGORIES = true;
-              break;
-            case "Wordnet":
-              settings.tagger = tagSentenceWithWordnet;
-              GLOBAL.config.LIST_OF_CATEGORIES = true;
-              break;
-            default:
-              settings.taggingAlgorithm = 'fsPOSTagger';
-              settings.tagger = lexiconParser.parse(settings.lexiconText,
-                {type_lattice: settings.typeLattice});
-              GLOBAL.config.LIST_OF_CATEGORIES = false;
-          }
+          createTagger(files.lexiconFile.path);
         }
 
         // Process parser settings
@@ -210,14 +236,7 @@ function submitSettings(req, res) {
         if (files.grammarFile.name) {
           settings.grammarFile = files.grammarFile.name;
           settings.grammarText = fs.readFileSync(files.grammarFile.path, 'utf8');
-          if (settings.typeLattice) {
-            settings.grammar = grammarParser.parse(settings.grammarText, 
-              {type_lattice: settings.typeLattice});
-            logger.debug("submitSettings: created a new grammar");
-            settings.grammarHasUnificationConstraints = settings.grammar.hasUnificationConstraints;
-            settings.grammarIsInCNF = settings.grammar.is_CNF;
-            logger.debug("submitSettings: grammar is in CNF: " + settings.grammarIsInCNF);
-          }
+          createParser();
         }
         break;
       default: 
@@ -238,64 +257,13 @@ function uploadSettings(req, res) {
       settings.settingsFile = files.settingsFile.name;
       var data = fs.readFileSync(files.settingsFile.path, 'utf8');
       settings = JSON.parse(data);
-      // Create a tokenizer
-      switch(settings.tokenizerAlgorithm) {
-        case "wordTokenizer":
-          settings.tokenizer = new natural.WordTokenizer();
-          break;
-        case "treebankWordTokenizer":
-          settings.tokenizer = new natural.TreebankWordTokenizer();
-          break;
-        case "regexpTokenizer":
-          settings.tokenizer = new natural.RegexpTokenizer(settings.regularExpression);
-          break;
-        case "wordPunctTokenizer":
-          settings.tokenizer = new natural.WordPunctTokenizer();
-          break;
-        default:
-          settings.tokenizer = new natural.WordTokenizer();
-          settings.tokenizerAlgorithm = "wordTokenizer";
-      }      
+      createTokenizer();
       // Parse the type lattice
-      settings.typeLattice = typeLatticeParser.parse(settings.typeLatticeText);
+      createTypeLattice();
       // Parse the lexicon
-      switch (settings.taggingAlgorithm) {
-        case "fsPOSTagger":
-          if (settings.typeLattice) {
-            settings.tagger = lexiconParser.parse(settings.lexiconText, 
-              {type_lattice: settings.typeLattice});
-            GLOBAL.config.LIST_OF_CATEGORIES = false;
-            settings.lexiconHasFeatureStructures = true;
-          }
-          break;
-        case "simplePOSTagger":
-          // Assigns a list of lexical categories
-          settings.tagger = new simplePOSTagger(files.lexiconFile.path, false);
-          logger.debug("uploadSettings: created a Simple POS Tagger");
-          GLOBAL.config.LIST_OF_CATEGORIES = true;
-          logger.debug("uploadSettings: GLOBAL.config.LIST_OF_CATEGORIES: " + GLOBAL.config.LIST_OF_CATEGORIES);
-          break;
-        case "brillPOSTagger":
-          // Assigns a list of lexical categories based on Brill's transformation rules
-          GLOBAL.config.LIST_OF_CATEGORIES = true;
-          break;
-        case "Wordnet":
-          settings.tagger = tagSentenceWithWordnet;
-          GLOBAL.config.LIST_OF_CATEGORIES = true;
-          break;
-        default:
-          settings.taggingAlgorithm = 'fsPOSTagger';
-          settings.tagger = lexiconParser.parse(settings.lexiconText,
-            {type_lattice: settings.typeLattice});
-          GLOBAL.config.LIST_OF_CATEGORIES = false;
-      }      
+      createTagger();
       // Parse the grammar
-      settings.grammar = grammarParser.parse(settings.grammarText, 
-        {type_lattice: settings.typeLattice});
-      logger.debug("submitSettings: created a new grammar");
-      settings.grammarHasUnificationConstraints = settings.grammar.hasUnificationConstraints;
-      settings.grammarIsInCNF = settings.grammar.is_CNF;
-      logger.debug("submitSettings: grammar is in CNF: " + settings.grammarIsInCNF);
+      createParser();
     }
     res.render('settings', {settings: settings, results: results});
   });
@@ -338,8 +306,14 @@ function typeLatticeView(req, res) {
 }
 
 function showType(req, res) {
+  logger.debug('showType: type: ' + req.body.typeToShow);
   var type = settings.typeLattice.get_type_by_name(req.body.typeToShow);
-  results.typePrettyPrint = type.prettyPrint();
+  if (type) {
+    results.typePrettyPrint = type.prettyPrintWithSuperTypes();
+  }
+  else {
+    results.typePrettyPrint = 'Could not find type';
+  }
   res.render('type_lattice', {settings: settings, results: results});
 }
 
@@ -351,10 +325,7 @@ function saveTypeLatticeSettings(req, res) {
     if (files.typeLatticeFile.name) {
       settings.typeLatticeFile = files.typeLatticeFile.name;
       settings.typeLatticeText = fs.readFileSync(files.typeLatticeFile.path, 'utf8');
-      settings.typeLattice = typeLatticeParser.parse(settings.typeLatticeText);
-      logger.debug("submitSettings: created a new type lattice");
-      settings.typeLatticeHasAppropriateFunction =
-        (settings.typeLattice.appropriate_function !== null);
+      createTypeLattice();
     }
     res.render('type_lattice', {settings: settings, results: results});
   });
@@ -393,23 +364,7 @@ function saveFile(req, res) {
 function saveTokenizerSettings(req, res) {
   settings.tokenizerAlgorithm = req.body.tokenizerAlgorithm;
   settings.regularExpression = req.body.regularExpression;
-  switch(settings.tokenizerAlgorithm) {
-    case "wordTokenizer":
-      settings.tokenizer = new natural.WordTokenizer();
-      break;
-    case "treebankWordTokenizer":
-      settings.tokenizer = new natural.TreebankWordTokenizer();
-      break;
-    case "regexpTokenizer":
-      settings.tokenizer = new natural.RegexpTokenizer(settings.regularExpression);
-      break;
-    case "wordPunctTokenizer":
-      settings.tokenizer = new natural.WordPunctTokenizer();
-      break;
-    default:
-      settings.tokenizer = new natural.WordTokenizer();
-      settings.tokenizerAlgorithm = "wordTokenizer";
-  }
+  createTokenizer();
   res.render('tokenizer', {settings: settings, results: results});
 }
 
@@ -437,38 +392,7 @@ function saveTaggerSettings(req, res) {
     if (files.lexiconFile) {
       settings.lexiconFile = files.lexiconFile.name;
       settings.lexiconText = fs.readFileSync(files.lexiconFile.path, 'utf8');
-      switch (settings.taggingAlgorithm) {
-        case "fsPOSTagger":
-          if (settings.typeLattice) {
-            settings.tagger = lexiconParser.parse(settings.lexiconText,
-              {type_lattice: settings.typeLattice});
-            GLOBAL.config.LIST_OF_CATEGORIES = false;
-            settings.lexiconHasFeatureStructures = true;
-            logger.debug("saveTaggerSettings: created an FS POS Tagger");
-          }
-          break;
-        case "simplePOSTagger":
-          settings.tagger = new simplePOSTagger(files.lexiconFile.path, false);
-          logger.debug("saveTaggerSettings: created a Simple POS Tagger");
-          // Assigns a list of lexical categories
-          GLOBAL.config.LIST_OF_CATEGORIES = true;
-          logger.debug("saveTaggerSettings: GLOBAL.config.LIST_OF_CATEGORIES: " + GLOBAL.config.LIST_OF_CATEGORIES);
-          break;
-        case "brillPOSTagger":
-          // Assigns a list of lexical categories based on Brill's transformation rules
-          GLOBAL.config.LIST_OF_CATEGORIES = true;
-          break;
-        case "Wordnet":
-          settings.tagger = tagSentenceWithWordnet;
-          GLOBAL.config.LIST_OF_CATEGORIES = true;
-          break;
-        default:
-          settings.taggingAlgorithm = 'fsPOSTagger';
-          settings.tagger = lexiconParser.parse(settings.lexiconText,
-            {type_lattice: settings.typeLattice});
-          GLOBAL.config.LIST_OF_CATEGORIES = false;
-          settings.lexiconHasFeatureStructures = true;
-      }
+      createTagger(files.lexiconFile.path);
     }
     res.render('tagger', {settings: settings, results: results});
   });
@@ -532,14 +456,7 @@ function saveParserSettings(req, res) {
     if (files.grammarFile.name) {
       settings.grammarFile = files.grammarFile.name;
       settings.grammarText = fs.readFileSync(files.grammarFile.path, 'utf8');
-      if (settings.typeLattice) {
-        settings.grammar = grammarParser.parse(settings.grammarText,
-          {type_lattice: settings.typeLattice});
-        logger.debug("saveParserSettings: created a new grammar");
-        settings.grammarHasUnificationConstraints = settings.grammar.hasUnificationConstraints;
-        settings.grammarIsInCNF = settings.grammar.is_CNF;
-        logger.debug("saveParserSettings: grammar is in CNF: " + settings.grammarIsInCNF);
-      }
+      createParser();
     }
     res.render('parser', {settings: settings, results: results});
   });
@@ -550,7 +467,7 @@ function tagFunctionWords() {
   var taggedSentence = results.taggedSentence;
   
   logger.debug("Enter tagFunctionWords( " + taggedSentence + ")");
-  var tagger = new simplePOSTagger(functionWordsConfigFile);
+  var tagger = new simplePOSTagger(functionWordsConfigFile, false);
   taggedSentence.forEach(function(taggedWord) {
     var functionWordTags = tagger.tag_word(taggedWord[0]);
     logger.debug("tagFunctionWords: function word tags: " + functionWordTags);
