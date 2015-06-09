@@ -22,7 +22,7 @@ block content
       formaction="/save_type_lattice_settings", formenctype="multipart/form-data")
       h2 Input type
       fieldset
-        input(type="text", name="inputType", value=results.type)
+        input(type="text", name="typeToShow", value=results.type)
       br
       input(type='submit', name='typeToShow', value='Show type', formaction="/show_type")
       if results.typePrettyPrint

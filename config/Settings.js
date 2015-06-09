@@ -18,8 +18,10 @@
 
 var config = {};
 
-config.log4js_config = '/home/hugo/Workspace/grammar-workbench/config/log4js.json';
-//config.log4js_config = '/Workspace/grammar-workbench/config/log4js.json';
+config.workspace = '/Workspace/';
+//config.workspace = '/home/hugo/Workspace/';
+config.log4js_config = config.workspace + 'grammar-workbench/config/log4js.json';
+config.documentation = config.workspace + 'grammar-workbench/README.md';
 
 //GLOBAL.config = config;
 
