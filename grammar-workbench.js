@@ -60,6 +60,11 @@ function initialise() {
   settings.tokenizerAlgorithm = '';
   settings.regularExpression = '';
 
+  // Stemmer settings
+  settings.stemmerAlgorithm = '';
+  settings.applyStemmer = false;
+  settings.stemmer = null;
+
   // Type lattice settings
   settings.typeLatticeFile = '';
   settings.typeLattice = null;
@@ -112,6 +117,20 @@ function createTokenizer() {
     default:
       settings.tokenizer = new natural.WordTokenizer();
       settings.tokenizerAlgorithm = "wordTokenizer";
+  }
+}
+
+function createStemmer() {
+  switch(settings.stemmerAlgorithm) {
+    case 'PorterStemmer':
+      settings.stemmer = natural.PorterStemmer;
+      break;
+    case 'LancasterStemmer':
+      settings.stemmer = natural.LancasterStemmer;
+      break;
+    default:
+      settings.stemmerAlgorithm = 'PorterStemmer';
+      settings.stemmer = natural.PorterStemmer;
   }
 }
 
@@ -211,6 +230,11 @@ function submitSettings(req, res) {
         settings.tokenizerAlgorithm = fields.tokenizerAlgorithm;
         settings.regularExpression = fields.regularExpression;
         createTokenizer();
+
+        // Process stemmer settings
+        settings.applyStemmer = (fields.applyStemmer === 'on');
+        settings.stemmerAlgorithm = fields.stemmerAlgorithm;
+        createStemmer();
 
         // Process type lattice settings
         settings.applyAppropriateFunction = (fields.applyAppropriateFunction === 'on');
@@ -379,6 +403,39 @@ function tokenizeSentenceView(req, res) {
   res.render('tokenizer', {settings: settings, results: results});
 }
 
+// Process stemmer settings
+function saveStemmerSettings(req, res) {
+  settings.applyStemmer = (req.body.applyStemmer === 'on');
+  settings.stemmerAlgorithm = req.body.stemmerAlgorithm;
+  createStemmer();
+  res.render('stemmer', {settings: settings, results: results});
+}
+
+function stemmerView(req, res) {
+  res.render('stemmer', {settings: settings, results: results});
+}
+
+function stemSentence(settings, results) {
+  if (settings.applyStemmer) {
+    results.stemmedSentence = [];
+    results.tokenizedSentence.forEach(function(token) {
+      results.stemmedSentence.push(settings.stemmer.stem(token));
+    });
+  }
+  else {
+    results.stemmedSentence = results.tokenizedSentence;
+  }
+}
+
+function stemSentenceView(req, res) {
+  results.sentence = req.body.inputSentence;
+  // Tokenize sentence
+  results.tokenizedSentence = settings.tokenizer.tokenize(results.sentence);
+  // Stem sentence
+  stemSentence(settings, results);
+  res.render('stemmer', {settings: settings, results: results});
+}
+
 function taggerView(req, res) {
   res.render('tagger', {settings: settings, results: results});
 }
@@ -403,6 +460,9 @@ function tagSentenceView(req, res) {
     results.sentence = req.body.inputSentence;
     logger.debug('tagSentenceView: ' + results.sentence);
     results.tokenizedSentence = settings.tokenizer.tokenize(results.sentence);
+    // Stem sentence
+    stemSentence(settings, results);
+
     tagSentence(function () {
       res.render('tagger', {settings: settings, results: results});
     });
@@ -520,7 +580,7 @@ function tagSentence(next) {
   switch (settings.taggingAlgorithm) {
     case "fsPOSTagger":
       // Assigns a list of feature structures
-      results.taggedSentence = settings.tagger.tagSentence(results.tokenizedSentence);
+      results.taggedSentence = settings.tagger.tagSentence(results.stemmedSentence);
       results.taggedSentencePrettyPrint = '';
       results.taggedSentence.forEach(function(taggedWord) {
         taggedWord.forEach(function(tag, index) {
@@ -538,7 +598,7 @@ function tagSentence(next) {
       break;
     case "simplePOSTagger":
       // Assigns a list of lexical categories
-      results.taggedSentence = settings.tagger.tag_sentence(results.tokenizedSentence);
+      results.taggedSentence = settings.tagger.tag_sentence(results.stemmedSentence);
       next();
       break;
     case "brillPOSTagger":
@@ -547,7 +607,7 @@ function tagSentence(next) {
       break;
     case "Wordnet":
       // Assigns a list of lexical categories
-      settings.tagger(tagged_sentence, function(tagged_sentence) {
+      settings.tagger(results.stemmedSentence, function(tagged_sentence) {
         results.taggedSentence = tagged_sentence;
         next();
       });
@@ -638,6 +698,9 @@ function parseSentenceView(req, res) {
     results.sentence = req.body.inputSentence;
     results.tokenizedSentence = settings.tokenizer.tokenize(results.sentence);
 
+    // Stem sentence
+    stemSentence(settings, results);
+
     // This function is passed to the tagging function which is asynchronous
     function next() {
       postProcessTagging();
@@ -693,6 +756,10 @@ function contactView(req, res) {
   app.get('/tokenizer', tokenizerView);
   app.post('/save_tokenizer_settings', saveTokenizerSettings);
   app.post('/tokenize_sentence', tokenizeSentenceView);
+
+  app.get('/stemmer', stemmerView);
+  app.post('/save_stemmer_settings', saveStemmerSettings);
+  app.post('/stem_sentence', stemSentenceView);
 
   app.get('/type_lattice', typeLatticeView);
   app.post('/show_type', showType);

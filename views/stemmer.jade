@@ -1,0 +1,25 @@
+extends layout
+block content
+  div.form-style-1
+    form(method="post")
+      h2 Stemmer settings
+      fieldset
+        label
+          input(type="checkbox", name="applyStemmer", checked=settings.applyStemmer)
+          = " Apply stemmer"
+          label(for="stemmerAlgorithm") Stemmer algorithm
+          select(id="stemmerAlgorithm", name="stemmerAlgorithm")
+            option(value="noChoice", selected=settings.stemmerAlgorithm === '') Choose an algorithm
+            option(value="PorterStemmer", selected=settings.stemmerAlgorithm === 'PorterStemmer') Porter Stemmer
+            option(value="LancasterStemmer", , selected=settings.stemmerAlgorithm === 'LancasterStemmer') Lancaster Stemmer
+      br
+      input(type='submit', name='saveStemmerSettings', value='Apply settings', formaction="/save_stemmer_settings")
+      h2 Input sentence
+      fieldset
+          input(type="text", name="inputSentence", width="400px")
+      br
+      input(type='submit', name='Stem', value='Stem', formaction="/stem_sentence")
+      if results.stemmedSentence
+        h2 Stemmer output
+        textarea(cols="80", rows="20", readonly)
+          !{JSON.stringify(results.stemmedSentence, null, 2)}
