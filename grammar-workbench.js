@@ -100,7 +100,7 @@ function settingsView(req, res) {
   res.render('settings', {settings: settings});
 }
 
-function createTokenizer() {
+function createTokenizer(settings) {
   switch(settings.tokenizerAlgorithm) {
     case "wordTokenizer":
       settings.tokenizer = new natural.WordTokenizer();
@@ -120,7 +120,7 @@ function createTokenizer() {
   }
 }
 
-function createStemmer() {
+function createStemmer(settings) {
   switch(settings.stemmerAlgorithm) {
     case 'PorterStemmer':
       settings.stemmer = natural.PorterStemmer;
@@ -134,7 +134,7 @@ function createStemmer() {
   }
 }
 
-function createTypeLattice() {
+function createTypeLattice(settings) {
   settings.typeLattice = typeLatticeParser.parse(settings.typeLatticeText);
   settings.typeLatticePrettyPrint = settings.typeLattice.pretty_print();
   settings.typeLatticeHasAppropriateFunction =
@@ -142,7 +142,7 @@ function createTypeLattice() {
   logger.debug("createTypeLattice: created a new type lattice");
 }
 
-function createTagger(file) {
+function createTagger(settings) {
   switch (settings.taggingAlgorithm) {
     case "fsPOSTagger":
       if (settings.typeLattice) {
@@ -154,7 +154,7 @@ function createTagger(file) {
       break;
     case "simplePOSTagger":
       // Assigns a list of lexical categories
-      settings.tagger = new simplePOSTagger(file, false);
+      settings.tagger = new simplePOSTagger(settings.lexiconPath, false);
       logger.debug("submitSettings: created a Simple POS Tagger");
       GLOBAL.config.LIST_OF_CATEGORIES = true;
       logger.debug("submitSettings: GLOBAL.config.LIST_OF_CATEGORIES: " + GLOBAL.config.LIST_OF_CATEGORIES);
@@ -177,7 +177,7 @@ function createTagger(file) {
 }
 
 
-function createParser() {
+function createParser(settings) {
   if (settings.typeLattice) {
     settings.grammar = grammarParser.parse(settings.grammarText,
       {type_lattice: settings.typeLattice});
@@ -229,19 +229,19 @@ function submitSettings(req, res) {
         // Process tokenizer settings
         settings.tokenizerAlgorithm = fields.tokenizerAlgorithm;
         settings.regularExpression = fields.regularExpression;
-        createTokenizer();
+        createTokenizer(settings);
 
         // Process stemmer settings
         settings.applyStemmer = (fields.applyStemmer === 'on');
         settings.stemmerAlgorithm = fields.stemmerAlgorithm;
-        createStemmer();
+        createStemmer(settings);
 
         // Process type lattice settings
         settings.applyAppropriateFunction = (fields.applyAppropriateFunction === 'on');
         if (files.typeLatticeFile.name) {
           settings.typeLatticeFile = files.typeLatticeFile.name;
           settings.typeLatticeText = fs.readFileSync(files.typeLatticeFile.path, 'utf8');
-          createTypeLattice();
+          createTypeLattice(settings);
         }
 
         // Process tagger settings
@@ -250,8 +250,9 @@ function submitSettings(req, res) {
         settings.assignFunctionWordTags = (fields.assignFunctionWordTags === 'on');
         if (files.lexiconFile.name) {
           settings.lexiconFile = files.lexiconFile.name;
+          settings.lexiconPath = files.lexiconFile.path;
           settings.lexiconText = fs.readFileSync(files.lexiconFile.path, 'utf8');
-          createTagger(files.lexiconFile.path);
+          createTagger(settings);
         }
 
         // Process parser settings
@@ -260,7 +261,7 @@ function submitSettings(req, res) {
         if (files.grammarFile.name) {
           settings.grammarFile = files.grammarFile.name;
           settings.grammarText = fs.readFileSync(files.grammarFile.path, 'utf8');
-          createParser();
+          createParser(settings);
         }
         break;
       default: 
@@ -281,13 +282,10 @@ function uploadSettings(req, res) {
       settings.settingsFile = files.settingsFile.name;
       var data = fs.readFileSync(files.settingsFile.path, 'utf8');
       settings = JSON.parse(data);
-      createTokenizer();
-      // Parse the type lattice
-      createTypeLattice();
-      // Parse the lexicon
-      createTagger();
-      // Parse the grammar
-      createParser();
+      createTokenizer(settings);
+      createTypeLattice(settings);
+      createTagger(settings);
+      createParser(settings);
     }
     res.render('settings', {settings: settings, results: results});
   });
@@ -349,7 +347,7 @@ function saveTypeLatticeSettings(req, res) {
     if (files.typeLatticeFile.name) {
       settings.typeLatticeFile = files.typeLatticeFile.name;
       settings.typeLatticeText = fs.readFileSync(files.typeLatticeFile.path, 'utf8');
-      createTypeLattice();
+      createTypeLattice(settings);
     }
     res.render('type_lattice', {settings: settings, results: results});
   });
@@ -388,7 +386,7 @@ function saveFile(req, res) {
 function saveTokenizerSettings(req, res) {
   settings.tokenizerAlgorithm = req.body.tokenizerAlgorithm;
   settings.regularExpression = req.body.regularExpression;
-  createTokenizer();
+  createTokenizer(settings);
   res.render('tokenizer', {settings: settings, results: results});
 }
 
@@ -407,7 +405,7 @@ function tokenizeSentenceView(req, res) {
 function saveStemmerSettings(req, res) {
   settings.applyStemmer = (req.body.applyStemmer === 'on');
   settings.stemmerAlgorithm = req.body.stemmerAlgorithm;
-  createStemmer();
+  createStemmer(settings);
   res.render('stemmer', {settings: settings, results: results});
 }
 
@@ -449,7 +447,7 @@ function saveTaggerSettings(req, res) {
     if (files.lexiconFile) {
       settings.lexiconFile = files.lexiconFile.name;
       settings.lexiconText = fs.readFileSync(files.lexiconFile.path, 'utf8');
-      createTagger(files.lexiconFile.path);
+      createTagger(settings);
     }
     res.render('tagger', {settings: settings, results: results});
   });
@@ -516,7 +514,7 @@ function saveParserSettings(req, res) {
     if (files.grammarFile.name) {
       settings.grammarFile = files.grammarFile.name;
       settings.grammarText = fs.readFileSync(files.grammarFile.path, 'utf8');
-      createParser();
+      createParser(settings);
     }
     res.render('parser', {settings: settings, results: results});
   });
@@ -556,20 +554,23 @@ function tagFunctionWords() {
 }
 
 // Remove words from taggedSentence that were not tagged
-function stripWordsNotInLexicon() {
-  var newTaggedSentence = [];
-  settings.strippedTokens = [];
-  results.taggedSentence.forEach(function(taggedWord) {
-    if (taggedWord.length > 1) { 
-      // The word has tags -> add to the result
-      newTaggedSentence.push(taggedWord);
-    }
-    else {
-      // Add to the stripped tokens
-      settings.strippedTokens.push(taggedWord[0]);
-    }
-  });
-  return(newTaggedSentence);
+function stripWordsNotInLexicon(settings, results) {
+  if (settings.stripWordsNotInLexicon) {
+    var newTaggedSentence = [];
+    settings.strippedTokens = [];
+    results.taggedSentence.forEach(function (taggedWord) {
+      if (taggedWord.length > 1) {
+        // The word has tags -> add to the result
+        newTaggedSentence.push(taggedWord);
+      }
+      else {
+        // Add to the stripped tokens
+        results.strippedTokens.push(taggedWord[0]);
+      }
+    });
+    results.taggedSentence = newTaggedSentence;
+    results.sentenceLength = newTaggedSentence.length;
+  }
 }
 
 // next is a callback and should be called after tagging has finished
@@ -624,10 +625,7 @@ function postProcessTagging() {
   }
 
   // Strip words without tags
-  if (settings.stripWordsNotInLexicon) {
-    results.taggedSentence = stripWordsNotInLexicon(results);
-    results.sentenceLength = results.taggedSentence.length;
-  }
+  stripWordsNotInLexicon(settings, results);
 
   // Prepare a comma separated list of categories for pretty printing the chart
   results.taggedSentenceCategories = [];
@@ -687,11 +685,6 @@ function parseSentence() {
 
 function parseSentenceView(req, res) {
   results = {};
-
-  settings.stripWordsNotInLexicon = (req.body.stripWordsNotInLexicon === 'on');
-  settings.applyAppropriateFunction = (req.body.applyAppropriateFunction === 'on');
-  settings.parsingAlgorithm = req.body.parsingAlgorithm;
-  settings.applyUnification = (req.body.applyUnification === 'on');
 
   if (settings.tokenizer && settings.tagger && settings.grammar && settings.typeLattice) {
     // Tokenize sentence
