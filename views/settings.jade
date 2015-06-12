@@ -8,7 +8,28 @@ block content
      ul
        li
          input(type="radio" name="css3-tabstrip-0" checked="checked" id="css3-tabstrip-0-0")
-         label(for="css3-tabstrip-0-0") Tokenizer
+         label(for="css3-tabstrip-0-0") Type lattice
+         div.form-style-1
+           label(for="applyAppropriateFunction")
+             input(type="checkbox", id="applyAppropriateFunction", name="applyAppropriateFunction", checked=settings.applyAppropriateFunction)
+             = " Apply appropriate function"
+           label(for="currentTypeLatticeFile") Current type lattice
+           fieldset(for="currentTypeLatticeFile")
+             if settings.typeLatticeFile
+               input(type="text", value="#{settings.typeLatticeFile}", readonly)
+             else
+               input(type="text", id="currentTypeLatticeFile", value="no file selected", readonly)
+             label
+               input(type="checkbox", checked=settings.typeLatticeHasAppropriateFunction, disabled)
+               =  " Has appropriate function"
+           br
+           fieldset
+             label(for="typeLatticeFile") Select file:
+             input(type="file", id="typeLatticeFile", name="typeLatticeFile")
+             input(type='submit', name='submit_settings', value='Edit type lattice')
+       li
+         input(type="radio" name="css3-tabstrip-0" id="css3-tabstrip-0-1")
+         label(for="css3-tabstrip-0-1") Tokenizer
          div.form-style-1
             label(for="tokenizerAlgorithm") Tokenizer algorithm
             select(id="tokenizerAlgorithm", name="tokenizerAlgorithm")
@@ -20,29 +41,20 @@ block content
             label(for="regularExpression") Regular expression:
             input(type="text", id="regularExpression", name="regularExpression")
        li
-         input(type="radio" name="css3-tabstrip-0" id="css3-tabstrip-0-1")
-         label(for="css3-tabstrip-0-1") Type lattice
-         div.form-style-1
-            label(for="applyAppropriateFunction")
-              input(type="checkbox", id="applyAppropriateFunction", name="applyAppropriateFunction", checked=settings.applyAppropriateFunction)
-              = " Apply appropriate function"
-            label(for="currentTypeLatticeFile") Current type lattice
-            fieldset(for="currentTypeLatticeFile")
-                if settings.typeLatticeFile
-                  input(type="text", value="#{settings.typeLatticeFile}", readonly)
-                else
-                  input(type="text", id="currentTypeLatticeFile", value="no file selected", readonly)
-                label
-                  input(type="checkbox", checked=settings.typeLatticeHasAppropriateFunction, disabled) 
-                  =  " Has appropriate function"
-            br
-            fieldset
-                label(for="typeLatticeFile") Select file:
-                input(type="file", id="typeLatticeFile", name="typeLatticeFile")
-                input(type='submit', name='submit_settings', value='Edit type lattice')
-       li
          input(type="radio" name="css3-tabstrip-0" id="css3-tabstrip-0-2")
-         label(for="css3-tabstrip-0-2") Tagger
+         label(for="css3-tabstrip-0-2") Stemmer
+         div.form-style-1
+           label
+             input(type="checkbox", name="applyStemmer", checked=settings.applyStemmer)
+             = " Apply stemmer"
+             label(for="stemmerAlgorithm") Stemmer algorithm
+             select(id="stemmerAlgorithm", name="stemmerAlgorithm")
+               option(value="noChoice", selected=settings.stemmerAlgorithm === '') Choose an algorithm
+               option(value="PorterStemmer", selected=settings.stemmerAlgorithm === 'PorterStemmer') Porter Stemmer
+               option(value="LancasterStemmer", , selected=settings.stemmerAlgorithm === 'LancasterStemmer') Lancaster Stemmer
+       li
+         input(type="radio" name="css3-tabstrip-0" id="css3-tabstrip-0-3")
+         label(for="css3-tabstrip-0-3") Tagger
          div.form-style-1
             label(for="taggingAlgorithm") Tagging algorithm
             fieldset
@@ -73,8 +85,8 @@ block content
                 input(type='submit', name='submit_settings', value='Edit lexicon')
             br
        li
-         input(type="radio" name="css3-tabstrip-0" id="css3-tabstrip-0-3")
-         label(for="css3-tabstrip-0-3") Parser
+         input(type="radio" name="css3-tabstrip-0" id="css3-tabstrip-0-4")
+         label(for="css3-tabstrip-0-4") Parser
          div.form-style-1
             label(for="parsingAlgorithm") Parsing algorithm
             fieldset
@@ -103,5 +115,5 @@ block content
             fieldset
                 input(type="file", id="grammarFile", name="grammarFile")
                 input(type='submit', name='submit_settings', value='Edit grammar')
-    input(type='submit', name='submit_settings', value='Apply')
+    input(type='submit', name='submit_settings', value='Save')
     input(type='submit', name='submit_settings', value='Cancel')

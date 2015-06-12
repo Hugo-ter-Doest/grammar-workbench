@@ -740,7 +740,6 @@ function contactView(req, res) {
   app.get('/download_settings', downloadSettingsView);
   app.post('/submit_settings', submitSettings);
 
-  
   app.get('/edit_grammar', editGrammarView);
   app.get('/edit_lexicon', editLexiconView);
   app.get('/edit_type_lattice', editTypeLatticeView);
