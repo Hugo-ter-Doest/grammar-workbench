@@ -3,7 +3,7 @@ extends layout
 block content
   div.form-style-1
    h1 Settings
-   form(method="post", action="/submit_settings", enctype="multipart/form-data")
+   form(method="post")
     div.css3-tabstrip
      ul
        li
@@ -26,7 +26,8 @@ block content
            fieldset
              label(for="typeLatticeFile") Select file:
              input(type="file", id="typeLatticeFile", name="typeLatticeFile")
-             input(type='submit', name='submit_settings', value='Edit type lattice')
+             input(type='submit', name='submit_settings', value='Edit type ' +
+             'lattice', formaction='/edit_type_lattice')
        li
          input(type="radio" name="css3-tabstrip-0" id="css3-tabstrip-0-1")
          label(for="css3-tabstrip-0-1") Tokenizer
@@ -82,7 +83,8 @@ block content
             label(for="lexiconFile") Select lexicon
             fieldset
                 input(type="file", id="lexiconFile", name="lexiconFile")
-                input(type='submit', name='submit_settings', value='Edit lexicon')
+                input(type='submit', name='submit_settings', value='Edit ' +
+                'lexicon', formaction='/edit_lexicon')
             br
        li
          input(type="radio" name="css3-tabstrip-0" id="css3-tabstrip-0-4")
@@ -114,6 +116,9 @@ block content
             label(for="grammarFile") Select grammar
             fieldset
                 input(type="file", id="grammarFile", name="grammarFile")
-                input(type='submit', name='submit_settings', value='Edit grammar')
-    input(type='submit', name='submit_settings', value='Save')
-    input(type='submit', name='submit_settings', value='Cancel')
+                input(type='submit', name='submit_settings', value='Edit ' +
+                'grammar', formaction='/edit_grammar')
+    input(type='submit', name='submit_settings', value='Save',
+    formaction="/submit_settings", formenctype="multipart/form-data")
+    input(type='submit', name='submit_settings', value='Cancel',
+    formaction='/cancel_settings')

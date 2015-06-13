@@ -30,7 +30,7 @@ block content
           = " Has feature structures"
         label(for="lexiconFile") Select lexicon
         input(type="file", id="lexiconFile", name="lexiconFile")
-        input(type='submit', name='editLexicon', value='Edit lexicon')
+        input(type='submit', name='editLexicon', value='Edit lexicon', formaction="/edit_lexicon")
       br
       input(type='submit', name='saveTaggerSettings', value='Apply settings', formaction="/save_tagger_settings",
       formenctype="multipart/form-data")

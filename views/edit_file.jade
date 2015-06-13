@@ -3,11 +3,12 @@ extends layout
 block content
     div.form-style-1
       form(method="post", action="/save_file", enctype="multipart/form-data")
+        textarea(id='fileContent', name="fileContent", style="display:none;")
         fieldset
             label(for="") Edit file:
-            input(type="text", readonly, value="#{(fileToEdit === 0) ? settings.typeLatticeFile : ((fileToEdit === 1) ? settings.lexiconFile: settings.grammarFile)}")
+            input(type="text", readonly, value="#{(settings.fileToEdit === 0) ? settings.typeLatticeFile : ((settings.fileToEdit === 1) ? settings.lexiconFile: settings.grammarFile)}")
         br
-        input(type='submit', name='save_file', value='Save')
+        input(type='submit', name='save_file', value='Save', onclick="setTextAreaValue()")
         input(type='submit', name='save_file', value='Cancel')
         br
         div#editor
@@ -17,7 +18,7 @@ block content
       editor.setTheme("ace/theme/monokai");
       editor.getSession().setMode("ace/mode/text");
       var text;
-      switch (!{fileToEdit}) {
+      switch (!{settings.fileToEdit}) {
         case 0:
           text = !{JSON.stringify(settings.typeLatticeText)};
           break;
@@ -31,3 +32,9 @@ block content
           text = '';
       }
       editor.setValue(text, 0);
+
+      function setTextAreaValue() {
+        var textarea = document.getElementById('fileContent');
+        //textarea.hide();
+        textarea.value = editor.getSession().getValue();
+      }

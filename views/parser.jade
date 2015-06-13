@@ -29,7 +29,7 @@ block content
           = " Has unification constraints"
         label(for="grammarFile") Select grammar
         input(type="file", id="grammarFile", name="grammarFile")
-        input(type='submit', name='submit_settings', value='Edit grammar')
+        input(type='submit', name='submit_settings', value='Edit grammar', formaction='/editGrammar')
       br
       input(type='submit', name='saveParserSettings', value='Apply settings', formaction="save_parser_settings",
       formenctype="multipart/form-data")

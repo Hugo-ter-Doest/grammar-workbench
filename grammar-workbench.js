@@ -200,7 +200,7 @@ function submitSettings(req, res) {
           fs.readFile(files.typeLatticeFile.path, 'utf8', function (error, text) {
             settings.typeLatticeText = text;
             settings.typeLattice = null;
-            editTypeLattice(req, res);
+            editTypeLatticeView(req, res);
           });
         }
         break;
@@ -210,7 +210,7 @@ function submitSettings(req, res) {
           fs.readFile(files.lexiconFile.path, 'utf8', function (error, text) {
             settings.lexiconText = text;
             settings.lexicon = null;
-            editLexicon(req, res);
+            editLexiconView(req, res);
           });
         }
         break;
@@ -221,11 +221,11 @@ function submitSettings(req, res) {
             settings.grammarText = text;
             // Invalidate the grammar
             settings.grammar = null;
-            editGrammar(req, res);
+            editGrammarView(req, res);
           });
         }
         break;
-      case 'Apply':
+      case 'Save':
         // Process tokenizer settings
         settings.tokenizerAlgorithm = fields.tokenizerAlgorithm;
         settings.regularExpression = fields.regularExpression;
@@ -282,8 +282,9 @@ function uploadSettings(req, res) {
       settings.settingsFile = files.settingsFile.name;
       var data = fs.readFileSync(files.settingsFile.path, 'utf8');
       settings = JSON.parse(data);
-      createTokenizer(settings);
       createTypeLattice(settings);
+      createTokenizer(settings);
+      createStemmer(settings)
       createTagger(settings);
       createParser(settings);
     }
@@ -292,16 +293,21 @@ function uploadSettings(req, res) {
 }
 
 function downloadSettingsView(req, res) {
+  // Copy only settings that can be stored in a JSON structure
   var s = {};
-  // Tokenizer settings
-  s.tokenizerAlgorithm = settings.tokenizerAlgorithm;
-  s.regularExpression = settings.regularExpression;
-
   // Type lattice settings
   s.typeLatticeFile = settings.typeLatticeFile;
   s.typeLatticeText = settings.typeLatticeText;
   s.applyAppropriateFunction = settings.applyAppropriateFunction;
   s.typeLatticeHasAppropriateFunction = settings.typeLatticeHasAppropriateFunction;
+
+  // Tokenizer settings
+  s.tokenizerAlgorithm = settings.tokenizerAlgorithm;
+  s.regularExpression = settings.regularExpression;
+
+  // Stemmer settings
+  s.applyStemmer = settings.applyStemmer;
+  s.stemmerAlgorithm = settings.stemmerAlgorithm;
 
   // Tagger settings
   s.taggingAlgorithm = settings.taggingAlgorithm;
@@ -354,15 +360,18 @@ function saveTypeLatticeSettings(req, res) {
 }
 
 function editTypeLatticeView(req, res) {
-  res.render('edit_file', {settings: settings, fileToEdit: TYPE_LATTICE_FILE});
+  settings.fileToEdit = TYPE_LATTICE_FILE;
+  res.render('edit_file', {settings: settings});
 }
 
 function editLexiconView(req, res) {
-  res.render('edit_file', {settings: settings, fileToEdit: LEXICON_FILE});
+  settings.fileToEdit = LEXICON_FILE;
+  res.render('edit_file', {settings: settings});
 }
 
 function editGrammarView(req, res) {
-  res.render('edit_file', {settings: settings, fileToEdit: GRAMMAR_FILE});
+  settings.fileToEdit = GRAMMAR_FILE;
+  res.render('edit_file', {settings: settings});
 }
 
 function saveFile(req, res) {
@@ -373,6 +382,24 @@ function saveFile(req, res) {
     switch(fields.save_file) {
       case 'Save':
         // Set the file server side, add to a library?
+        logger.debug('saveFile: file content: ' + fields.fileContent);
+        switch (settings.fileToEdit) {
+          case TYPE_LATTICE_FILE:
+            settings.typeLatticeText = fields.fileContent;
+            createTypeLattice(settings);
+            break;
+          case LEXICON_FILE:
+            settings.lexiconText = fields.fileContent;
+            createTagger(settings);
+            break;
+          case GRAMMAR_FILE:
+            settings.grammarText = fields.fileContent;
+            createParser(settings);
+            break;
+          default:
+            break
+        }
+        res.render('edit_file', {settings: settings});
         break;
       case 'Cancel':
         res.redirect('settings');
@@ -740,9 +767,6 @@ function contactView(req, res) {
   app.get('/download_settings', downloadSettingsView);
   app.post('/submit_settings', submitSettings);
 
-  app.get('/edit_grammar', editGrammarView);
-  app.get('/edit_lexicon', editLexiconView);
-  app.get('/edit_type_lattice', editTypeLatticeView);
   app.post('/save_file', saveFile);
 
   app.get('/tokenizer', tokenizerView);
@@ -756,6 +780,8 @@ function contactView(req, res) {
   app.get('/type_lattice', typeLatticeView);
   app.post('/show_type', showType);
   app.post('/save_type_lattice_settings', saveTypeLatticeSettings);
+  app.post('/edit_lexicon', editLexiconView);
+  app.post('/edit_type_lattice', editTypeLatticeView);
 
   app.get('/tagger', taggerView);
   app.post('/tag_sentence', tagSentenceView);
@@ -764,6 +790,7 @@ function contactView(req, res) {
   app.get('/parser', parserView);
   app.post('/save_parser_settings', saveParserSettings);
   app.post('/parse_sentence', parseSentenceView);
+  app.post('/edit_grammar', editGrammarView);
 
   app.get('/documentation', documentationView);
   app.get('/contact', contactView);

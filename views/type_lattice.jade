@@ -16,7 +16,7 @@ block content
           input(type="text", id="currentTypeLatticeFile", value="no file selected", readonly)
         label(for="typeLatticeFile") Select type lattice
         input(type="file", id="typeLatticeFile", name="typeLatticeFile")
-        input(type='submit', name='editTypeLattice', value='Edit type lattice')
+        input(type='submit', name='editTypeLattice', value='Edit type lattice', formaction='edit_type_lattice')
       br
       input(type='submit', name='saveTypeLatticeSettings', value='Apply settings',
       formaction="/save_type_lattice_settings", formenctype="multipart/form-data")
