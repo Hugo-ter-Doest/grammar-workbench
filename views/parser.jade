@@ -78,7 +78,8 @@ block content
                 tr
                   td(width="30px", height="50px", align="center")=i
                   - for (var j = 1; j <= results.sentenceLength; j++) {
-                  td(width="50px", height="50px", align="left")=results.chart.get_complete_items_from_to(i, j).length
+                  td(width="50px", height="50px", align="left")=results.chart
+                  .getCompleteItemsFromTo(i, j).length
                   - }
                 - }
             label Parse trees

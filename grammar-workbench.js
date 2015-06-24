@@ -136,7 +136,7 @@ function createStemmer(settings) {
 
 function createTypeLattice(settings) {
   settings.typeLattice = typeLatticeParser.parse(settings.typeLatticeText);
-  settings.typeLatticePrettyPrint = settings.typeLattice.pretty_print();
+  settings.typeLatticePrettyPrint = settings.typeLattice.prettyPrint();
   settings.typeLatticeHasAppropriateFunction =
     (settings.typeLattice.appropriate_function !== null);
   logger.debug("createTypeLattice: created a new type lattice");
@@ -335,7 +335,7 @@ function typeLatticeView(req, res) {
 
 function showType(req, res) {
   logger.debug('showType: type: ' + req.body.typeToShow);
-  var type = settings.typeLattice.get_type_by_name(req.body.typeToShow);
+  var type = settings.typeLattice.getTypeByName(req.body.typeToShow);
   if (type) {
     results.typePrettyPrint = type.prettyPrintWithSuperTypes();
   }
@@ -565,7 +565,7 @@ function tagFunctionWords() {
           var new_fs = featureStructureFactory.createFeatureStructure({
             type_lattice: settings.typeLattice
           });
-          var functionWordType = settings.typeLattice.get_type_by_name(functionWordTag);
+          var functionWordType = settings.typeLattice.getTypeByName(functionWordTag);
           var empty_fs = featureStructureFactory.createFeatureStructure({
             type_lattice: settings.typeLattice, 
             type: functionWordType
@@ -616,7 +616,7 @@ function tagSentence(next) {
             results.taggedSentencePrettyPrint += tag + '\n';
           }
           else {
-            results.taggedSentencePrettyPrint += tag.pretty_print() + '\n';
+            results.taggedSentencePrettyPrint += tag.prettyPrint() + '\n';
           }
         });
       });
@@ -694,18 +694,18 @@ function parseSentence() {
   var end = new Date().getTime();
   results.parsingTime = end - start;
 
-  results.fullParseItems = results.chart.full_parse_items(settings.parser.grammar.get_start_symbol(),
+  results.fullParseItems = results.chart.fullParseItems(settings.parser.grammar.getStartSymbol(),
     ((settings.parsingAlgorithm === 'HeadCorner') ||
      (settings.parsingAlgorithm === 'CYK'))
     ? 'cyk_item'
     : 'earleyitem');
   results.inLanguage = (results.fullParseItems.length > 0);
-  results.nrOfItems = results.chart.nr_of_items();
+  results.nrOfItems = results.chart.nrOfItems();
 
   // Prepare pretty_prints of the feature structures
   if (settings.applyUnification) {
     results.fullParseItems.forEach(function(item) {
-      item.data.fsPretty = item.data.fs.pretty_print();
+      item.data.fsPretty = item.data.fs.prettyPrint();
     });
   }
 }
